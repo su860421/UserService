@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "88970a0117c062eed55fa8728fc43833",
+    "content-hash": "2a5688b3fda6d156ee9cc5ef089888d6",
     "packages": [
         {
             "name": "brick/math",
@@ -1053,6 +1053,69 @@
                 }
             ],
             "time": "2025-02-03T10:55:03+00:00"
+        },
+        {
+            "name": "joesu/laravel-scaffold",
+            "version": "v1.1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/su860421/laravel-scaffold.git",
+                "reference": "ee7e0887c2c9947d1a32e0014f708f4e01ad6fac"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/su860421/laravel-scaffold/zipball/ee7e0887c2c9947d1a32e0014f708f4e01ad6fac",
+                "reference": "ee7e0887c2c9947d1a32e0014f708f4e01ad6fac",
+                "shasum": ""
+            },
+            "require": {
+                "laravel/framework": "^10.0|^11.0|^12.0",
+                "php": "^8.1|^8.2|^8.3|^8.4"
+            },
+            "require-dev": {
+                "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+                "phpunit/phpunit": "^10.0"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "JoeSu\\LaravelScaffold\\Providers\\LaravelScaffoldServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "JoeSu\\LaravelScaffold\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "JoeSu"
+                }
+            ],
+            "description": "A powerful Laravel package that provides a complete implementation of Repository and Service patterns for rapid API development.",
+            "homepage": "https://github.com/joesu/laravel-scaffold",
+            "keywords": [
+                "api",
+                "architecture",
+                "boilerplate",
+                "generator",
+                "laravel",
+                "pattern",
+                "repository",
+                "scaffold",
+                "service"
+            ],
+            "support": {
+                "issues": "https://github.com/joesu/laravel-scaffold/issues",
+                "source": "https://github.com/joesu/laravel-scaffold"
+            },
+            "time": "2025-06-28T01:30:24+00:00"
         },
         {
             "name": "laravel/framework",
@@ -6869,16 +6932,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "11.5.24",
+            "version": "11.5.25",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "6b07ab1047155cf38f82dd691787a277782271dd"
+                "reference": "864ab32b3ff52058f917c5b19b3cef821e4a4f1b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/6b07ab1047155cf38f82dd691787a277782271dd",
-                "reference": "6b07ab1047155cf38f82dd691787a277782271dd",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/864ab32b3ff52058f917c5b19b3cef821e4a4f1b",
+                "reference": "864ab32b3ff52058f917c5b19b3cef821e4a4f1b",
                 "shasum": ""
             },
             "require": {
@@ -6950,7 +7013,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.24"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/11.5.25"
             },
             "funding": [
                 {
@@ -6974,7 +7037,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-06-20T11:31:02+00:00"
+            "time": "2025-06-27T04:36:07+00:00"
         },
         {
             "name": "sebastian/cli-parser",
@@ -8091,12 +8154,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"
     },
-    "platform-dev": [],
+    "platform-dev": {},
     "plugin-api-version": "2.6.0"
 }

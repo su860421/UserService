@@ -44,4 +44,7 @@ public/storage
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Vendor directory
+vendor 
