@@ -1,5 +1,4 @@
 version: '3'
-
 services:
   app:
     build:
@@ -7,8 +6,6 @@ services:
       dockerfile: Dockerfile
     volumes:
       - .:/var/www/html
-    env_file:
-      - .env
     environment:
       - DB_HOST=db
       - REDIS_HOST=redis
@@ -18,8 +15,6 @@ services:
       - DB_DATABASE=laravel
       - DB_USERNAME=root
       - DB_PASSWORD=
-      - PHP_MEMORY_LIMIT=2G
-      - PHP_MAX_EXECUTION_TIME=300
     command: php artisan serve --host=0.0.0.0 --port=8000
     ports:
       - "8000:8000"
@@ -42,5 +37,29 @@ services:
     ports:
       - "6379:6379"
 
+  horizon:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: php artisan horizon
+    volumes:
+      - .:/var/www/html
+    environment:
+      - DB_HOST=db
+      - REDIS_HOST=redis
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - APP_KEY=${APP_KEY}
+      - DB_DATABASE=laravel
+      - DB_USERNAME=root
+      - DB_PASSWORD=
+      - PHP_MEMORY_LIMIT=2G
+      - PHP_MAX_EXECUTION_TIME=300
+    ports:
+      - "8001:8001"
+    depends_on:
+      - redis
+      - db
+
 volumes:
-  dbdata: 
+  dbdata:
