@@ -1,6 +1,34 @@
 <?php
 
 return [
+    'auth' => [
+        'name' => [
+            'required' => '姓名為必填欄位',
+            'max' => '姓名不能超過 255 個字元',
+        ],
+        'email' => [
+            'required' => '電子郵件為必填欄位',
+            'email' => '請輸入有效的電子郵件地址',
+            'unique' => '此電子郵件地址已被使用',
+        ],
+        'password' => [
+            'required' => '密碼為必填欄位',
+            'min' => '密碼至少需要 8 個字元',
+            'confirmed' => '密碼確認不符',
+        ],
+        'current_password' => [
+            'required' => '目前密碼為必填欄位',
+        ],
+        'phone' => [
+            'max' => '電話號碼不能超過 20 個字元',
+        ],
+        'employee_id' => [
+            'unique' => '此員工編號已被使用',
+        ],
+        'token' => [
+            'required' => '重設密碼 token 為必填欄位',
+        ],
+    ],
     'user' => [
         'name' => [
             'required' => '姓名為必填欄位',
