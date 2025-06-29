@@ -10,6 +10,7 @@ use App\Http\Requests\User\ShowUserRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use Illuminate\Http\JsonResponse;
+use Exception;
 
 class UserController extends Controller
 {
@@ -22,50 +23,93 @@ class UserController extends Controller
 
     public function index(IndexUserRequest $request): JsonResponse
     {
-        $result = $this->userService->index(
-            $request->input('per_page', 15),
-            $request->input('page', 1),
-            $request->input('order_by', 'created_at'),
-            $request->input('order_direction', 'desc'),
-            $request->getSelectColumns(),
-            $request->input('with', []),
-            $request->input('filters', []),
-            $request->input('search')
-        );
+        try {
+            $result = $this->userService->index(
+                $request->input('per_page', 15),
+                $request->input('order_by', 'created_at'),
+                $request->input('order_direction', 'desc'),
+                $request->input('with', []),
+                $request->getSelectColumns(),
+                $request->input('filters', [])
+            );
 
-        $statusCode = $result['success'] ? 200 : 500;
-        return response()->json($result, $statusCode);
+            $statusCode = $result['success'] ? 200 : 500;
+            return response()->json($result, $statusCode);
+        } catch (Exception $e) {
+            $statusCode = $e->getCode() ?: 500;
+
+            return response()->json([
+                'success' => false,
+                'message' => '取得使用者列表失敗'
+            ], $statusCode);
+        }
     }
 
     public function show(ShowUserRequest $request, string $id): JsonResponse
     {
-        $result = $this->userService->show($id, $request->input('with', []));
+        try {
+            $result = $this->userService->find($id, $request->input('with', []));
 
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result, $statusCode);
+            $statusCode = $result['success'] ? 200 : 404;
+            return response()->json($result, $statusCode);
+        } catch (Exception $e) {
+            $statusCode = $e->getCode() ?: 500;
+
+            return response()->json([
+                'success' => false,
+                'message' => '取得使用者資訊失敗'
+            ], $statusCode);
+        }
     }
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        $result = $this->userService->store($request->validated());
+        try {
+            $result = $this->userService->create($request->validated());
 
-        $statusCode = $result['success'] ? 201 : 500;
-        return response()->json($result, $statusCode);
+            $statusCode = $result['success'] ? 201 : 500;
+            return response()->json($result, $statusCode);
+        } catch (Exception $e) {
+            $statusCode = $e->getCode() ?: 500;
+
+            return response()->json([
+                'success' => false,
+                'message' => '建立使用者失敗'
+            ], $statusCode);
+        }
     }
 
     public function update(UpdateUserRequest $request, string $id): JsonResponse
     {
-        $result = $this->userService->update($id, $request->validated());
+        try {
+            $result = $this->userService->update($id, $request->validated());
 
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result, $statusCode);
+            $statusCode = $result['success'] ? 200 : 404;
+            return response()->json($result, $statusCode);
+        } catch (Exception $e) {
+            $statusCode = $e->getCode() ?: 500;
+
+            return response()->json([
+                'success' => false,
+                'message' => '更新使用者失敗'
+            ], $statusCode);
+        }
     }
 
     public function destroy(string $id): JsonResponse
     {
-        $result = $this->userService->destroy($id);
+        try {
+            $result = $this->userService->delete($id);
 
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result, $statusCode);
+            $statusCode = $result['success'] ? 200 : 404;
+            return response()->json($result, $statusCode);
+        } catch (Exception $e) {
+            $statusCode = $e->getCode() ?: 500;
+
+            return response()->json([
+                'success' => false,
+                'message' => '刪除使用者失敗'
+            ], $statusCode);
+        }
     }
 }

@@ -13,6 +13,7 @@
         "archtechx/enums": "^1.1",
         "joesu/laravel-scaffold": "^1.0",
         "laravel/framework": "^12.0",
+        "laravel/horizon": "^5.33",
         "laravel/tinker": "^2.10.1",
         "tymon/jwt-auth": "^2.2"
     },

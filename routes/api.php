@@ -1,27 +1,42 @@
 <?php
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+declare(strict_types=1);
+
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
+use Illuminate\Support\Facades\Route;
 
-/*
-|--------------------------------------------------------------------------
-| API Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register API routes for your application. These
-| routes are loaded by the RouteServiceProvider and all of them will
-| be assigned to the "api" middleware group. Make something great!
-|
-*/
+Route::name('api.')->prefix('v1')->group(function () {
+    // Health check
+    Route::get('health-check', function () {
+        return response()->json(['status' => 'ok']);
+    })->name('health_check');
 
-// 用戶管理路由
-Route::apiResource('users', UserController::class);
+    // Email verification
+    Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
+        ->name('verification.verify');
 
-// 健康檢查
-Route::get('/health', function () {
-    return response()->json([
-        'status' => 'healthy',
-        'timestamp' => now()->toISOString()
-    ]);
+    // Password reset routes
+    Route::get('/password/reset/{token}', function ($token) {
+        return response()->json(['token' => $token]);
+    })->name('password.reset');
+
+    // Authentication routes (public)
+    Route::post('/login', [AuthController::class, 'login'])->name('login');
+    Route::post('/register', [AuthController::class, 'register'])->name('register');
+    Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot_password');
+    Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('reset_password');
+
+    // Protected routes
+    Route::middleware(['auth:api'])->group(function () {
+        Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+        Route::post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
+        Route::get('/me', [AuthController::class, 'me'])->name('me');
+        Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change_password');
+
+        // User management routes (with email verification)
+        Route::middleware(['user.email.verified'])->group(function () {
+            Route::apiResource('users', UserController::class);
+        });
+    });
 });
