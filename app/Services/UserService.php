@@ -10,9 +10,9 @@ use JoeSu\LaravelScaffold\BaseService;
 
 class UserService extends BaseService implements UserServiceInterface
 {
-    public function __construct(UserRepositoryInterface $repository)
+    public function __construct(UserRepositoryInterface $userRepository)
     {
-        parent::__construct($repository);
+        parent::__construct($userRepository);
     }
 
     // Add business logic methods here

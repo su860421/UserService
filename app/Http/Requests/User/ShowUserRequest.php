@@ -9,17 +9,11 @@ class ShowUserRequest extends FormRequest
 {
     use WithFieldValidation;
 
-    /**
-     * 確定用戶是否有權限進行此請求
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * 取得驗證規則
-     */
     public function rules(): array
     {
         return [
@@ -30,9 +24,6 @@ class ShowUserRequest extends FormRequest
         ];
     }
 
-    /**
-     * 取得驗證錯誤訊息
-     */
     public function messages(): array
     {
         return [
@@ -43,9 +34,6 @@ class ShowUserRequest extends FormRequest
         ];
     }
 
-    /**
-     * 取得欄位名稱
-     */
     public function attributes(): array
     {
         return [

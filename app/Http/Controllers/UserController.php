@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Contracts\UserServiceInterface;
-use App\Http\Requests\User\StoreUserRequest;
-use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Requests\User\IndexUserRequest;
 use App\Http\Requests\User\ShowUserRequest;
-use Illuminate\Http\Request;
+use App\Http\Requests\User\StoreUserRequest;
+use App\Http\Requests\User\UpdateUserRequest;
+use Illuminate\Http\JsonResponse;
 
 class UserController extends Controller
 {
@@ -20,78 +20,52 @@ class UserController extends Controller
         $this->userService = $userService;
     }
 
-    /**
-     * Display all Users (supports pagination, sorting, relationships, filtering)
-     */
-    public function index(IndexUserRequest $request)
+    public function index(IndexUserRequest $request): JsonResponse
     {
-        $perPage = $request->get('per_page', 0);
-        $orderBy = $request->get('order_by');
-        $orderDirection = $request->get('order_direction', 'asc');
-        $relationships = $request->get('with', []);
-        $columns = $request->get('columns', ['*']);
-        $filters = $request->get('filters', []);
-
-        $users = $this->userService->index(
-            $perPage,
-            $orderBy,
-            $orderDirection,
-            $relationships,
-            $columns,
-            $filters
+        $result = $this->userService->index(
+            $request->input('per_page', 15),
+            $request->input('page', 1),
+            $request->input('order_by', 'created_at'),
+            $request->input('order_direction', 'desc'),
+            $request->getSelectColumns(),
+            $request->input('with', []),
+            $request->input('filters', []),
+            $request->input('search')
         );
 
-        return response()->json($users);
+        $statusCode = $result['success'] ? 200 : 500;
+        return response()->json($result, $statusCode);
     }
 
-    /**
-     * Display specific User
-     */
-    public function show(ShowUserRequest $request, $id)
+    public function show(ShowUserRequest $request, string $id): JsonResponse
     {
-        try {
-            $columns = $request->get('columns', ['*']);
-            $relationships = $request->get('with', []);
-            $user = $this->userService->find(
-                $id,
-                $columns,
-                $relationships
-            );
-            return response()->json($user);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'User not found'], 404);
-        }
+        $result = $this->userService->show($id, $request->input('with', []));
+
+        $statusCode = $result['success'] ? 200 : 404;
+        return response()->json($result, $statusCode);
     }
 
-    /**
-     * Create new User
-     */
-    public function store(StoreUserRequest $request)
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $user = $this->userService->create(
-            $request->validated()
-        );
-        return response()->json($user, 201);
+        $result = $this->userService->store($request->validated());
+
+        $statusCode = $result['success'] ? 201 : 500;
+        return response()->json($result, $statusCode);
     }
 
-    /**
-     * Update User
-     */
-    public function update(UpdateUserRequest $request, $id)
+    public function update(UpdateUserRequest $request, string $id): JsonResponse
     {
-        $user = $this->userService->update(
-            $id,
-            $request->validated()
-        );
-        return response()->json($user);
+        $result = $this->userService->update($id, $request->validated());
+
+        $statusCode = $result['success'] ? 200 : 404;
+        return response()->json($result, $statusCode);
     }
 
-    /**
-     * Delete User
-     */
-    public function destroy($id)
+    public function destroy(string $id): JsonResponse
     {
-        $this->userService->delete($id);
-        return response()->json(['message' => 'User deleted successfully']);
+        $result = $this->userService->destroy($id);
+
+        $statusCode = $result['success'] ? 200 : 404;
+        return response()->json($result, $statusCode);
     }
 }

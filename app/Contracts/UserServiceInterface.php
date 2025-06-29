@@ -6,7 +6,4 @@ namespace App\Contracts;
 
 use JoeSu\LaravelScaffold\BaseServiceInterface;
 
-interface UserServiceInterface extends BaseServiceInterface
-{
-    // Add custom methods here
-}
+interface UserServiceInterface extends BaseServiceInterface {}

@@ -1,6 +1,15 @@
 <?php
 
 return [
+    'auth' => [
+        'name' => 'Name',
+        'email' => 'Email',
+        'password' => 'Password',
+        'current_password' => 'Current Password',
+        'phone' => 'Phone',
+        'employee_id' => 'Employee ID',
+        'token' => 'Password Reset Token',
+    ],
     'user' => [
         'name' => 'Name',
         'email' => 'Email',
@@ -15,19 +24,19 @@ return [
         'deleted_at' => 'Deleted At',
     ],
     'pagination' => [
-        'per_page' => 'Items Per Page',
-        'page' => 'Page Number',
+        'per_page' => 'Items per page',
+        'page' => 'Page number',
     ],
     'sorting' => [
-        'order_by' => 'Sort Field',
-        'order_direction' => 'Sort Direction',
+        'order_by' => 'Sort field',
+        'order_direction' => 'Sort direction',
     ],
     'filtering' => [
-        'filters' => 'Filters',
-        'search' => 'Search Keyword',
+        'filters' => 'Filter conditions',
+        'search' => 'Search keyword',
     ],
     'selection' => [
-        'columns' => 'Selected Columns',
-        'with' => 'Relationships',
+        'columns' => 'Column selection',
+        'with' => 'Relationship loading',
     ],
 ];

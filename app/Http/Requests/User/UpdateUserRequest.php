@@ -2,24 +2,15 @@
 
 namespace App\Http\Requests\User;
 
-use App\Http\Requests\Traits\WithDynamicFieldValidation;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateUserRequest extends FormRequest
 {
-    use WithDynamicFieldValidation;
-
-    /**
-     * 確定用戶是否有權限進行此請求
-     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /**
-     * 取得驗證規則
-     */
     public function rules(): array
     {
         $userId = $this->route('user');
@@ -34,9 +25,6 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
-    /**
-     * 取得驗證錯誤訊息
-     */
     public function messages(): array
     {
         return [
@@ -51,9 +39,6 @@ class UpdateUserRequest extends FormRequest
         ];
     }
 
-    /**
-     * 取得欄位名稱
-     */
     public function attributes(): array
     {
         return [

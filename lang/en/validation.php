@@ -1,6 +1,34 @@
 <?php
 
 return [
+    'auth' => [
+        'name' => [
+            'required' => 'Name is required',
+            'max' => 'Name cannot exceed 255 characters',
+        ],
+        'email' => [
+            'required' => 'Email is required',
+            'email' => 'Please enter a valid email address',
+            'unique' => 'This email address is already in use',
+        ],
+        'password' => [
+            'required' => 'Password is required',
+            'min' => 'Password must be at least 8 characters',
+            'confirmed' => 'Password confirmation does not match',
+        ],
+        'current_password' => [
+            'required' => 'Current password is required',
+        ],
+        'phone' => [
+            'max' => 'Phone number cannot exceed 20 characters',
+        ],
+        'employee_id' => [
+            'unique' => 'This employee ID is already in use',
+        ],
+        'token' => [
+            'required' => 'Password reset token is required',
+        ],
+    ],
     'user' => [
         'name' => [
             'required' => 'Name is required',
@@ -45,7 +73,7 @@ return [
     ],
     'filtering' => [
         'filters' => [
-            'array' => 'Filters must be in array format',
+            'array' => 'Filter conditions must be in array format',
         ],
         'filters_field' => [
             'in' => 'Specified filter field does not exist',
