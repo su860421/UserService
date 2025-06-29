@@ -1,10 +1,7 @@
-# 使用官方 PHP 8.4 FPM 映像檔
-FROM php:8.4-fpm
+# 使用官方 PHP 8.4 CLI 映像檔
+FROM php:8.4-cli
 
-# 設定工作目錄
-WORKDIR /var/www/html
-
-# 安裝系統依賴
+# 安裝系統依賴和 PHP 擴展
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -14,30 +11,27 @@ RUN apt-get update && apt-get install -y \
     libzip-dev \
     zip \
     unzip \
-    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
+    && docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # 安裝 Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 複製所有應用程式檔案
-COPY . .
+# 設定工作目錄
+WORKDIR /var/www/html
+
+# 複製 composer 檔案
+COPY composer.json composer.lock ./
 
 # 安裝 PHP 依賴
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+# 複製應用程式檔案
+COPY . .
+
 # 設定檔案權限
-RUN chown -R www-data:www-data /var/www/html \
-    && chmod -R 755 /var/www/html/storage \
-    && chmod -R 755 /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 建立 .env 檔案（如果不存在）
-RUN if [ ! -f .env ]; then cp .env.example .env 2>/dev/null || echo "APP_NAME=Laravel" > .env; fi
-
-# 生成應用程式金鑰
-RUN php artisan key:generate --no-interaction || true
-
-# 暴露端口
-EXPOSE 9000
-
-# 啟動 PHP-FPM
-CMD ["php-fpm"] 
+# 啟動 Laravel 開發伺服器
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"] 
