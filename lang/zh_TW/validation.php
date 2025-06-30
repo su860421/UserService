@@ -27,6 +27,7 @@ return [
         ],
         'token' => [
             'required' => '重設密碼 token 為必填欄位',
+            'min' => '重設密碼 token 長度不足',
         ],
     ],
     'user' => [

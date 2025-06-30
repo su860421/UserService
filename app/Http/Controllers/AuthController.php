@@ -37,21 +37,21 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->register($request->validated());
-            $statusCode = $result['success'] ? 201 : 500;
 
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ], 201);
+            }
 
-            Log::error('註冊 API 失敗', [
-                'email' => $request->email,
-                'error' => $e->getMessage()
-            ]);
-
+            $code = $result['code'] ?? $result['status_code'] ?? 400;
             return response()->json([
-                'success' => false,
-                'message' => '註冊失敗，請稍後再試'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '註冊失敗，請稍後再試', 500);
         }
     }
 
@@ -59,15 +59,21 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->login($request->validated());
-            $statusCode = $result['success'] ? 200 : 401;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 401;
             return response()->json([
-                'success' => false,
-                'message' => '登入失敗，請稍後再試'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '登入失敗，請稍後再試', 500);
         }
     }
 
@@ -75,15 +81,20 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->logout();
-            $statusCode = $result['success'] ? 200 : 500;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 401;
             return response()->json([
-                'success' => false,
-                'message' => '登出失敗，請稍後再試'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '登出失敗，請稍後再試', 500);
         }
     }
 
@@ -91,15 +102,21 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->refresh();
-            $statusCode = $result['success'] ? 200 : 401;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 401;
             return response()->json([
-                'success' => false,
-                'message' => 'Token 更新失敗，請稍後再試'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, 'Token 更新失敗，請稍後再試', 401);
         }
     }
 
@@ -107,15 +124,21 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->me();
-            $statusCode = $result['success'] ? 200 : 500;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 401;
             return response()->json([
-                'success' => false,
-                'message' => '取得使用者資訊失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '取得使用者資訊失敗', 500);
         }
     }
 
@@ -123,15 +146,20 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->forgotPassword($request->email);
-            $statusCode = $result['success'] ? 200 : 404;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 404;
             return response()->json([
-                'success' => false,
-                'message' => '忘記密碼處理失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '忘記密碼處理失敗', 500);
         }
     }
 
@@ -139,15 +167,20 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->resetPassword($request->token, $request->password);
-            $statusCode = $result['success'] ? 200 : 400;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 400;
             return response()->json([
-                'success' => false,
-                'message' => '重設密碼失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '重設密碼失敗', 400);
         }
     }
 
@@ -155,15 +188,20 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->changePassword($request->current_password, $request->new_password);
-            $statusCode = $result['success'] ? 200 : 400;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 400;
             return response()->json([
-                'success' => false,
-                'message' => '修改密碼失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '修改密碼失敗', 400);
         }
     }
 
@@ -171,15 +209,20 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->verifyEmail($id, $hash);
-            $statusCode = $result['success'] ? 200 : 400;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 400;
             return response()->json([
-                'success' => false,
-                'message' => '電子郵件驗證失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '電子郵件驗證失敗', 400);
         }
     }
 
@@ -187,15 +230,64 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->resendVerificationEmail($request->email);
-            $statusCode = $result['success'] ? 200 : 400;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
 
+            if ($result['success']) {
+                return response()->json([
+                    'message' => $result['message']
+                ]);
+            }
+
+            $code = $result['code'] ?? $result['status_code'] ?? 400;
             return response()->json([
-                'success' => false,
-                'message' => '重新發送驗證郵件失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '重新發送驗證郵件失敗', 400);
         }
+    }
+
+    /**
+     * 統一錯誤處理方法
+     */
+    private function handleException(Exception $e, string $defaultMessage, int $defaultCode = 500): JsonResponse
+    {
+        $statusCode = $defaultCode;
+        $message = $defaultMessage;
+
+        // 根據異常類型調整狀態碼和訊息
+        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
+            $statusCode = 404;
+            $message = '資源不存在';
+        } elseif ($e instanceof \Illuminate\Validation\ValidationException) {
+            $statusCode = 422;
+            $message = '驗證失敗';
+        } elseif ($e instanceof \Tymon\JWTAuth\Exceptions\JWTException) {
+            $statusCode = 401;
+            $message = 'Token 無效或已過期';
+        } elseif ($e instanceof \Illuminate\Database\QueryException) {
+            $statusCode = 500;
+            $message = '資料庫操作失敗';
+        } elseif ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
+            $statusCode = 404;
+            $message = '請求的資源不存在';
+        } elseif ($e instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException) {
+            $statusCode = 403;
+            $message = '沒有權限訪問此資源';
+        } elseif ($e->getCode() >= 400 && $e->getCode() < 600) {
+            $statusCode = $e->getCode();
+        }
+
+        Log::error('Auth API 錯誤', [
+            'message' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+            'status_code' => $statusCode,
+            'exception_class' => get_class($e)
+        ]);
+
+        return response()->json([
+            'message' => $message,
+            'error' => config('app.debug') ? $e->getMessage() : null
+        ], $statusCode);
     }
 }

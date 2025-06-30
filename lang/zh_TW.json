@@ -34,5 +34,11 @@
     "email-already-verified": "電子郵件已經驗證過了",
     "email-verified-success": "電子郵件驗證成功",
     "invalid-verification-link": "驗證連結無效",
-    "verification-email-sent": "驗證郵件已重新發送"
+    "verification-email-sent": "驗證郵件已重新發送",
+    "error-resource-not-found": "資源不存在",
+    "error-validation": "驗證失敗",
+    "error-jwt": "Token 無效或已過期",
+    "error-db": "資料庫操作失敗",
+    "error-http-not-found": "請求的資源不存在",
+    "error-http-forbidden": "沒有權限訪問此資源"
 }

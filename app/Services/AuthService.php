@@ -424,7 +424,7 @@ class AuthService implements AuthServiceInterface
         if ($oldJwt && JWTAuth::setToken($oldJwt)->check()) {
             JWTAuth::setToken($oldJwt)->invalidate();
         }
-        Cache::put($jwtKey, $jwtToken, $expiredAt);
+        Cache::put($jwtKey, $jwtToken, $expiresInSeconds);
 
         return [
             'access_token' => $jwtToken,

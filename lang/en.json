@@ -34,5 +34,11 @@
     "email-already-verified": "Email already verified",
     "email-verified-success": "Email verified successfully",
     "invalid-verification-link": "Invalid verification link",
-    "verification-email-sent": "Verification email sent"
+    "verification-email-sent": "Verification email sent",
+    "error-resource-not-found": "Resource not found",
+    "error-validation": "Validation failed",
+    "error-jwt": "Token is invalid or expired",
+    "error-db": "Database operation failed",
+    "error-http-not-found": "Requested resource not found",
+    "error-http-forbidden": "You do not have permission to access this resource"
 }

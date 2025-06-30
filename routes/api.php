@@ -16,16 +16,11 @@ Route::name('api.')->prefix('v1')->group(function () {
     Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
         ->name('verification.verify');
 
-    // Password reset routes
-    Route::get('/password/reset/{token}', function ($token) {
-        return response()->json(['token' => $token]);
-    })->name('password.reset');
-
-    // Authentication routes (public)
     Route::post('/login', [AuthController::class, 'login'])->name('login');
     Route::post('/register', [AuthController::class, 'register'])->name('register');
     Route::post('/forgot-password', [AuthController::class, 'forgotPassword'])->name('forgot_password');
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('reset_password');
+    Route::post('/resend-verification', [AuthController::class, 'resendVerificationEmail'])->name('resend_verification');
 
     // Protected routes
     Route::middleware(['auth:api'])->group(function () {

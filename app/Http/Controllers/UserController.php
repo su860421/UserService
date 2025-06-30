@@ -33,15 +33,20 @@ class UserController extends Controller
                 $request->input('filters', [])
             );
 
-            $statusCode = $result['success'] ? 200 : 500;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ]);
+            }
 
+            $code = $result['code'] ?? $result['status_code'] ?? 500;
             return response()->json([
-                'success' => false,
-                'message' => '取得使用者列表失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '取得使用者列表失敗', 500);
         }
     }
 
@@ -50,15 +55,20 @@ class UserController extends Controller
         try {
             $result = $this->userService->find($id, $request->input('with', []));
 
-            $statusCode = $result['success'] ? 200 : 404;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ]);
+            }
 
+            $code = $result['code'] ?? $result['status_code'] ?? 404;
             return response()->json([
-                'success' => false,
-                'message' => '取得使用者資訊失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '取得使用者資訊失敗', 500);
         }
     }
 
@@ -67,15 +77,20 @@ class UserController extends Controller
         try {
             $result = $this->userService->create($request->validated());
 
-            $statusCode = $result['success'] ? 201 : 500;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ], 201);
+            }
 
+            $code = $result['code'] ?? $result['status_code'] ?? 500;
             return response()->json([
-                'success' => false,
-                'message' => '建立使用者失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '建立使用者失敗', 500);
         }
     }
 
@@ -84,15 +99,20 @@ class UserController extends Controller
         try {
             $result = $this->userService->update($id, $request->validated());
 
-            $statusCode = $result['success'] ? 200 : 404;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
+            if ($result['success']) {
+                return response()->json([
+                    'result' => $result['data'],
+                    'message' => $result['message']
+                ]);
+            }
 
+            $code = $result['code'] ?? $result['status_code'] ?? 404;
             return response()->json([
-                'success' => false,
-                'message' => '更新使用者失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '更新使用者失敗', 500);
         }
     }
 
@@ -101,15 +121,19 @@ class UserController extends Controller
         try {
             $result = $this->userService->delete($id);
 
-            $statusCode = $result['success'] ? 200 : 404;
-            return response()->json($result, $statusCode);
-        } catch (Exception $e) {
-            $statusCode = $e->getCode() ?: 500;
+            if ($result['success']) {
+                return response()->json([
+                    'message' => $result['message']
+                ]);
+            }
 
+            $code = $result['code'] ?? $result['status_code'] ?? 404;
             return response()->json([
-                'success' => false,
-                'message' => '刪除使用者失敗'
-            ], $statusCode);
+                'message' => $result['message'],
+                'error' => $result['error'] ?? null
+            ], $code);
+        } catch (Exception $e) {
+            return $this->handleException($e, '刪除使用者失敗', 500);
         }
     }
 }
