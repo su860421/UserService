@@ -32,6 +32,13 @@ Route::name('api.')->prefix('v1')->group(function () {
         // User management routes (with email verification)
         Route::middleware(['user.email.verified'])->group(function () {
             Route::apiResource('users', UserController::class);
+            // Authorization routes
+            Route::get('authorization/roles', [\App\Http\Controllers\AuthorizationController::class, 'getRole']);
+            Route::post('authorization/roles', [\App\Http\Controllers\AuthorizationController::class, 'createRole']);
+            Route::get('authorization/roles/{id}', [\App\Http\Controllers\AuthorizationController::class, 'getRoleDetail']);
+            Route::put('authorization/roles/{id}', [\App\Http\Controllers\AuthorizationController::class, 'updateRole']);
+            Route::delete('authorization/roles/{id}', [\App\Http\Controllers\AuthorizationController::class, 'deleteRole']);
+            Route::put('authorization/roles/{id}/permissions', [\App\Http\Controllers\AuthorizationController::class, 'assignPermissionToRole']);
         });
     });
 });

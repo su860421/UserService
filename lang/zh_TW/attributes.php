@@ -34,4 +34,9 @@ return [
         'columns' => '欄位選擇',
         'with' => '關聯載入',
     ],
+    'role' => [
+        'name' => '角色名稱',
+        'description' => '角色描述',
+        'permissions' => '權限',
+    ],
 ];
