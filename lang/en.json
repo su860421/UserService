@@ -40,5 +40,8 @@
     "error-jwt": "Token is invalid or expired",
     "error-db": "Database operation failed",
     "error-http-not-found": "Requested resource not found",
-    "error-http-forbidden": "You do not have permission to access this resource"
+    "error-http-forbidden": "You do not have permission to access this resource",
+    "mail.notification_failed": "Failed to send email notification",
+    "error-unauthorized": "Unauthorized request",
+    "error-email-not-verified": "Please verify your email address first"
 }

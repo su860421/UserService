@@ -100,7 +100,7 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
         try {
             $this->notify(new EmailVerificationNotification());
         } catch (\Exception $e) {
-            Log::error('郵件通知發送失敗', [
+            Log::error(__('mail.notification_failed'), [
                 'user_id' => $this->id,
                 'email' => $this->email,
                 'error' => $e->getMessage()

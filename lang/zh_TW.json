@@ -40,5 +40,8 @@
     "error-jwt": "Token 無效或已過期",
     "error-db": "資料庫操作失敗",
     "error-http-not-found": "請求的資源不存在",
-    "error-http-forbidden": "沒有權限訪問此資源"
+    "error-http-forbidden": "沒有權限訪問此資源",
+    "mail.notification_failed": "郵件通知發送失敗",
+    "error-unauthorized": "未授權的請求",
+    "error-email-not-verified": "請先驗證您的電子郵件地址"
 }

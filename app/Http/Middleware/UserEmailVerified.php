@@ -20,14 +20,14 @@ class UserEmailVerified
 
         if (!$user) {
             return response()->json([
-                'message' => '未授權的請求',
+                'message' => __('error-unauthorized'),
                 'error' => 'UNAUTHORIZED'
             ], 401);
         }
 
         if (!$user->email_verified_at) {
             return response()->json([
-                'message' => '請先驗證您的電子郵件地址',
+                'message' => __('error-email-not-verified'),
                 'error' => 'EMAIL_NOT_VERIFIED'
             ], 403);
         }
