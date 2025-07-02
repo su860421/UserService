@@ -131,7 +131,7 @@ class AuthController extends Controller
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         try {
-            $this->authService->changePassword($request->current_password, $request->new_password);
+            $this->authService->changePassword($request->current_password, $request->password);
             return response()->json([
                 'success' => true,
                 'message' => __('change-password-success')

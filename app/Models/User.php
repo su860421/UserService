@@ -16,6 +16,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 use Symfony\Component\Uid\Ulid;
 use Illuminate\Support\Facades\Log;
+use App\Notifications\ResetPasswordEmailQueued;
 
 class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
@@ -117,6 +118,17 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new ResetPasswordNotification($token));
+    }
+
+    /**
+     * Send the reset password notification with custom url.
+     *
+     * @param string $url
+     * @return void
+     */
+    public function sendEmailResetPasswordNotification($url)
+    {
+        $this->notify(new ResetPasswordEmailQueued($url));
     }
 
     /**

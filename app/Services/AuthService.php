@@ -19,6 +19,7 @@ use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Redis;
+use Illuminate\Support\Facades\URL;
 
 class AuthService implements AuthServiceInterface
 {
@@ -43,14 +44,14 @@ class AuthService implements AuthServiceInterface
     public function login(array $credentials): array
     {
         if (!$token = JWTAuth::attempt($credentials)) {
-            throw new ServiceException('Invalid credentials', 'invalid-credentials', 401);
+            throw new ServiceException('Invalid credentials [invalid-credentials]', 401, null);
         }
         $user = Auth::user();
         if (!$user->is_active) {
-            throw new ServiceException('Account is disabled', 'account-disabled', 403);
+            throw new ServiceException('Account is disabled [account-disabled]', 403, null);
         }
-        if (!$user->email_verified_at) {
-            throw new ServiceException('Email not verified', 'email-not-verified', 403);
+        if (! $user->hasVerifiedEmail()) {
+            throw new ServiceException('Email not verified [email-not-verified]', 403, null);
         }
         return $this->generateTokenResponse($user);
     }
@@ -68,12 +69,12 @@ class AuthService implements AuthServiceInterface
         $key = 'refresh_token:' . $refreshToken;
         $data = Cache::get($key);
         if (!$data) {
-            throw new ServiceException('Refresh token is invalid', 'refresh-token-invalid', 401);
+            throw new ServiceException('Refresh token is invalid [refresh-token-invalid]', 401, null);
         }
         $user = $this->userRepository->find($data['user_id']);
         if (!$user) {
             Cache::forget($key);
-            throw new ServiceException('User not found', 'user-not-found', 404);
+            throw new ServiceException('User not found [user-not-found]', 404, null);
         }
         Cache::forget($key);
         return $this->generateTokenResponse($user);
@@ -83,35 +84,27 @@ class AuthService implements AuthServiceInterface
     {
         $user = Auth::user();
         if (!$user) {
-            throw new ServiceException('User not found', 'user-not-found', 404);
+            throw new ServiceException('User not found [user-not-found]', 404, null);
         }
         return $user;
     }
 
     public function forgotPassword(string $email): void
     {
-        DB::beginTransaction();
-        try {
-            $users = $this->userRepository->index(1, null, 'asc', [], ['*'], [['email', '=', $email]]);
-            if ($users->isEmpty()) {
-                DB::rollBack();
-                throw new ServiceException('User not found', 'user-not-found', 404);
-            }
-            $user = $users->first();
-            if (!$user->email_verified_at) {
-                DB::rollBack();
-                throw new ServiceException('Email not verified', 'email-not-verified', 403);
-            }
-            $status = Password::sendResetLink(['email' => $email]);
-            if ($status !== Password::RESET_LINK_SENT) {
-                DB::rollBack();
-                throw new ServiceException('Failed to send reset link', 'forgot-password-failed', 500);
-            }
-            DB::commit();
-        } catch (\Exception $e) {
-            DB::rollBack();
-            throw $e;
+        $users = $this->userRepository->index(1, null, 'asc', [], ['*'], [['email', '=', $email]]);
+        if ($users->isEmpty()) {
+            throw new ServiceException('User not found [user-not-found]', 404, null);
         }
+        $user = $users->first();
+
+        // 產生 Laravel 預設的密碼重設 token
+        $token = Password::createToken($user);
+
+        // 產生前端的重設密碼頁面連結
+        $frontEndUrl = config('app.frontend_url', 'http://localhost:3000'); // 請於 .env 設定 FRONTEND_URL
+        $frontEndLink = $frontEndUrl . '/reset-password?token=' . urlencode($token) . '&email=' . urlencode($user->email);
+
+        $user->sendEmailResetPasswordNotification($frontEndLink);
     }
 
     public function resetPassword(string $token, string $password): void
@@ -129,7 +122,7 @@ class AuthService implements AuthServiceInterface
             );
             if ($status !== Password::PASSWORD_RESET) {
                 DB::rollBack();
-                throw new ServiceException('Failed to reset password', 'reset-password-failed', 500);
+                throw new ServiceException('Failed to reset password [reset-password-failed]', 500, null);
             }
             DB::commit();
         } catch (\Exception $e) {
@@ -142,7 +135,7 @@ class AuthService implements AuthServiceInterface
     {
         $user = Auth::user();
         if (!Hash::check($currentPassword, $user->password)) {
-            throw new ServiceException('Current password is wrong', 'current-password-wrong', 400);
+            throw new ServiceException('Current password is wrong [current-password-wrong]', 400, null);
         }
         $this->userRepository->update($user->id, [
             'password' => Hash::make($newPassword)
@@ -154,13 +147,13 @@ class AuthService implements AuthServiceInterface
     {
         $user = $this->userRepository->find($id);
         if (!$user) {
-            throw new ServiceException('User not found', 'user-not-found', 404);
+            throw new ServiceException('User not found [user-not-found]', 404, null);
         }
         if ($user->email_verified_at) {
             return;
         }
         if (!hash_equals(sha1($user->email), $hash)) {
-            throw new ServiceException('Invalid verification link', 'invalid-verification-link', 400);
+            throw new ServiceException('Invalid verification link [invalid-verification-link]', 400, null);
         }
         $this->userRepository->update($user->id, [
             'email_verified_at' => now()
@@ -171,11 +164,11 @@ class AuthService implements AuthServiceInterface
     {
         $users = $this->userRepository->index(1, null, 'asc', [], ['*'], [['email', '=', $email]]);
         if ($users->isEmpty()) {
-            throw new ServiceException('User not found', 'user-not-found', 404);
+            throw new ServiceException('User not found [user-not-found]', 404, null);
         }
         $user = $users->first();
         if ($user->email_verified_at) {
-            throw new ServiceException('Email already verified', 'email-already-verified', 400);
+            throw new ServiceException('Email already verified [email-already-verified]', 400, null);
         }
         $user->sendEmailVerificationNotification();
     }
@@ -219,5 +212,12 @@ class AuthService implements AuthServiceInterface
             JWTAuth::setToken($oldJwt)->invalidate();
             Cache::forget($jwtKey);
         }
+    }
+
+    private function generateResetPasswordUrl($link)
+    {
+        // Implement the logic to generate the full reset password URL
+        // This is a placeholder and should be replaced with the actual implementation
+        return $link;
     }
 }

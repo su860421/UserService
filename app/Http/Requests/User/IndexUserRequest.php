@@ -4,6 +4,7 @@ namespace App\Http\Requests\User;
 
 use App\Http\Requests\Traits\WithFieldValidation;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\User;
 
 class IndexUserRequest extends FormRequest
 {
@@ -31,11 +32,11 @@ class IndexUserRequest extends FormRequest
 
     protected function getAvailableFields(): array
     {
-        return $this->getModelFields(\App\Models\User::class);
+        return $this->getModelFields(User::class);
     }
 
-    protected function model(): \App\Models\User
+    protected function model(): User
     {
-        return new \App\Models\User();
+        return new User();
     }
 }
