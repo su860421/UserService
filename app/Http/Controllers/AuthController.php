@@ -53,10 +53,7 @@ class AuthController extends Controller
             $result = $this->authService->login($request->validated());
             return response()->json([
                 'success' => true,
-                'data' => [
-                    'user' => $result['user'],
-                    'token' => $result['token'],
-                ],
+                'data' => $result,
                 'message' => __('login-success')
             ]);
         } catch (Exception $e) {
@@ -77,13 +74,14 @@ class AuthController extends Controller
         }
     }
 
-    public function refresh(): JsonResponse
+    public function refresh(Request $request): JsonResponse
     {
+        $request->validate(['refresh_token' => 'required|string']);
         try {
-            $token = $this->authService->refresh();
+            $result = $this->authService->refresh($request->refresh_token);
             return response()->json([
                 'success' => true,
-                'data' => $token,
+                'data' => $result,
                 'message' => __('token-refresh-success')
             ]);
         } catch (Exception $e) {
@@ -167,64 +165,5 @@ class AuthController extends Controller
         } catch (Exception $e) {
             return $this->handleException($e, __('verification-email-send-failed'), 400);
         }
-    }
-
-    public function refreshByRefreshToken(Request $request): JsonResponse
-    {
-        $request->validate(['refresh_token' => 'required|string']);
-        try {
-            $result = $this->authService->refreshByRefreshToken($request->refresh_token);
-            return response()->json([
-                'success' => true,
-                'data' => $result,
-                'message' => __('token-refresh-success')
-            ]);
-        } catch (Exception $e) {
-            return $this->handleException($e, __('token-refresh-failed'), 401);
-        }
-    }
-
-    /**
-     * 統一錯誤處理方法
-     */
-    protected function handleException(Exception $e, string $defaultMessage, int $defaultCode = 500): JsonResponse
-    {
-        $statusCode = $defaultCode;
-        $message = $defaultMessage;
-
-        // 根據異常類型調整狀態碼和訊息
-        if ($e instanceof \Illuminate\Database\Eloquent\ModelNotFoundException) {
-            $statusCode = 404;
-            $message = '資源不存在';
-        } elseif ($e instanceof \Illuminate\Validation\ValidationException) {
-            $statusCode = 422;
-            $message = '驗證失敗';
-        } elseif ($e instanceof \Tymon\JWTAuth\Exceptions\JWTException) {
-            $statusCode = 401;
-            $message = 'Token 無效或已過期';
-        } elseif ($e instanceof \Illuminate\Database\QueryException) {
-            $statusCode = 500;
-            $message = '資料庫操作失敗';
-        } elseif ($e instanceof \Symfony\Component\HttpKernel\Exception\NotFoundHttpException) {
-            $statusCode = 404;
-            $message = '請求的資源不存在';
-        } elseif ($e instanceof \Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException) {
-            $statusCode = 403;
-            $message = '沒有權限訪問此資源';
-        } elseif ($e->getCode() >= 400 && $e->getCode() < 600) {
-            $statusCode = $e->getCode();
-        }
-
-        Log::error('Auth API 錯誤', [
-            'message' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-            'status_code' => $statusCode,
-            'exception_class' => get_class($e)
-        ]);
-
-        return response()->json([
-            'message' => $message,
-            'error' => config('app.debug') ? $e->getMessage() : null
-        ], $statusCode);
     }
 }

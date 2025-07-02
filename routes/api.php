@@ -25,7 +25,7 @@ Route::name('api.')->prefix('v1')->group(function () {
     // Protected routes
     Route::middleware(['auth:api'])->group(function () {
         Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
-        Route::post('/refresh', [AuthController::class, 'refreshByRefreshToken'])->name('refresh');
+        Route::post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
         Route::get('/me', [AuthController::class, 'me'])->name('me');
         Route::post('/change-password', [AuthController::class, 'changePassword'])->name('change_password');
 
