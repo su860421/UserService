@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\Contracts\AuthServiceInterface;
 use App\Contracts\UserRepositoryInterface;
+use App\Exceptions\ServiceException;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -16,6 +17,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Arr;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use Tymon\JWTAuth\Exceptions\JWTException;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Redis;
 
 class AuthService implements AuthServiceInterface
 {
@@ -23,394 +26,158 @@ class AuthService implements AuthServiceInterface
         private UserRepositoryInterface $userRepository
     ) {}
 
-    public function register(array $data): array
+    public function register(array $data): User
     {
+        DB::beginTransaction();
         try {
-            // 開始資料庫交易
-            DB::beginTransaction();
-
-            // 1. 建立使用者
             $user = $this->userRepository->create($data);
-
-            // 2. 發送驗證郵件
-            try {
-                $user->sendEmailVerificationNotification();
-            } catch (\Exception $emailException) {
-                Log::error('驗證郵件發送失敗', [
-                    'user_id' => $user->id,
-                    'email' => $user->email,
-                    'error' => $emailException->getMessage()
-                ]);
-
-                // 如果發送郵件失敗，回滾交易
-                DB::rollBack();
-
-                return [
-                    'success' => false,
-                    'message' => '註冊成功，但驗證郵件發送失敗',
-                    'data' => [
-                        'user' => [
-                            'id' => $user->id,
-                            'name' => $user->name,
-                            'email' => $user->email,
-                            'phone' => $user->phone,
-                            'employee_id' => $user->employee_id,
-                        ],
-                        'email_verified' => false,
-                        'warning' => '請稍後重新發送驗證郵件',
-                        'error' => $emailException->getMessage()
-                    ]
-                ];
-            }
-
-            // 3. 提交交易
+            $user->sendEmailVerificationNotification();
             DB::commit();
-
-            return [
-                'success' => true,
-                'message' => __('register-success'),
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'phone' => $user->phone,
-                        'employee_id' => $user->employee_id,
-                    ],
-                    'email_verified' => false,
-                    'message' => '請檢查您的電子郵件並點擊驗證連結以完成註冊。'
-                ]
-            ];
+            return $user;
         } catch (\Exception $e) {
-            // 發生任何錯誤時回滾交易
             DB::rollBack();
-
-            Log::error('註冊失敗', [
-                'email' => $data['email'] ?? 'unknown',
-                'error' => $e->getMessage()
-            ]);
-
-            return [
-                'success' => false,
-                'message' => '註冊失敗，請稍後再試',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ];
+            throw $e;
         }
     }
 
     public function login(array $credentials): array
     {
         if (!$token = JWTAuth::attempt($credentials)) {
-            return [
-                'success' => false,
-                'message' => __('invalid-credentials')
-            ];
+            throw new ServiceException('Invalid credentials', 'invalid-credentials', 401);
         }
-
         $user = Auth::user();
-
         if (!$user->is_active) {
-            return [
-                'success' => false,
-                'message' => __('account-disabled')
-            ];
+            throw new ServiceException('Account is disabled', 'account-disabled', 403);
         }
-
         if (!$user->email_verified_at) {
-            return [
-                'success' => false,
-                'message' => __('email-not-verified'),
-                'data' => [
-                    'email_verified' => false,
-                    'message' => '請先驗證您的電子郵件地址才能登入。'
-                ]
-            ];
+            throw new ServiceException('Email not verified', 'email-not-verified', 403);
         }
-
-        $response = $this->generateTokenResponse($user);
-
-        return [
-            'success' => true,
-            'message' => __('login-success'),
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'employee_id' => $user->employee_id,
-                ],
-                'token' => $response['access_token'],
-                'token_type' => $response['token_type'],
-                'expires_in' => $response['expires_in'],
-                'expired_at' => $response['expired_at'],
-                'email_verified' => true,
-            ]
-        ];
+        return $this->generateTokenResponse($user);
     }
 
-    public function logout(): array
+    public function logout(): void
     {
-        try {
-            $user = Auth::user();
-            if ($user) {
-                $this->invalidateUserToken($user);
-            }
-
-            return [
-                'success' => true,
-                'message' => __('logout-success')
-            ];
-        } catch (JWTException $e) {
-            return [
-                'success' => false,
-                'message' => __('logout-failed'),
-                'error' => $e->getMessage()
-            ];
+        $user = Auth::user();
+        if ($user) {
+            $this->invalidateUserToken($user);
         }
     }
 
-    public function refresh(): array
+    public function refresh(string $refreshToken): array
     {
-        try {
-            $token = JWTAuth::refresh();
-            $user = Auth::user();
-            $response = $this->generateTokenResponse($user);
-
-            return [
-                'success' => true,
-                'message' => __('token-refresh-success'),
-                'data' => [
-                    'token' => $response['access_token'],
-                    'token_type' => $response['token_type'],
-                    'expires_in' => $response['expires_in'],
-                    'expired_at' => $response['expired_at'],
-                ]
-            ];
-        } catch (JWTException $e) {
-            return [
-                'success' => false,
-                'message' => __('token-refresh-failed'),
-                'error' => $e->getMessage()
-            ];
+        $key = 'refresh_token:' . $refreshToken;
+        $data = Cache::get($key);
+        if (!$data) {
+            throw new ServiceException('Refresh token is invalid', 'refresh-token-invalid', 401);
         }
+        $user = $this->userRepository->find($data['user_id']);
+        if (!$user) {
+            Cache::forget($key);
+            throw new ServiceException('User not found', 'user-not-found', 404);
+        }
+        Cache::forget($key);
+        return $this->generateTokenResponse($user);
     }
 
-    public function me(): array
+    public function me(): User
     {
-        try {
-            $user = Auth::user();
-            return [
-                'success' => true,
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'phone' => $user->phone,
-                        'employee_id' => $user->employee_id,
-                        'is_active' => $user->is_active,
-                        'created_at' => $user->created_at,
-                    ]
-                ]
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => __('get-user-info-failed'),
-                'error' => $e->getMessage()
-            ];
+        $user = Auth::user();
+        if (!$user) {
+            throw new ServiceException('User not found', 'user-not-found', 404);
         }
+        return $user;
     }
 
-    public function forgotPassword(string $email): array
+    public function forgotPassword(string $email): void
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
             $users = $this->userRepository->index(1, null, 'asc', [], ['*'], [['email', '=', $email]]);
-
             if ($users->isEmpty()) {
                 DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => __('user-not-found')
-                ];
+                throw new ServiceException('User not found', 'user-not-found', 404);
             }
-
             $user = $users->first();
-
-            // 檢查使用者是否已驗證電子郵件
             if (!$user->email_verified_at) {
                 DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => '請先驗證您的電子郵件地址才能重設密碼'
-                ];
+                throw new ServiceException('Email not verified', 'email-not-verified', 403);
             }
-
             $status = Password::sendResetLink(['email' => $email]);
-
-            if ($status === Password::RESET_LINK_SENT) {
-                DB::commit();
-                return [
-                    'success' => true,
-                    'message' => __('forgot-password-success')
-                ];
-            } else {
+            if ($status !== Password::RESET_LINK_SENT) {
                 DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => __('forgot-password-failed')
-                ];
+                throw new ServiceException('Failed to send reset link', 'forgot-password-failed', 500);
             }
+            DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Forgot password failed', [
-                'email' => $email,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return [
-                'success' => false,
-                'message' => '密碼重設請求失敗，請稍後再試',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ];
+            throw $e;
         }
     }
 
-    public function resetPassword(string $token, string $password): array
+    public function resetPassword(string $token, string $password): void
     {
+        DB::beginTransaction();
         try {
-            DB::beginTransaction();
-
             $status = Password::reset(
                 ['token' => $token, 'password' => $password],
-                function ($user, $password) {
+                function (User $user, string $password) {
                     $this->userRepository->update($user->id, [
                         'password' => Hash::make($password)
                     ]);
-
                     $this->invalidateUserToken($user);
                 }
             );
-
-            if ($status === Password::PASSWORD_RESET) {
-                DB::commit();
-                return [
-                    'success' => true,
-                    'message' => __('reset-password-success')
-                ];
-            } else {
+            if ($status !== Password::PASSWORD_RESET) {
                 DB::rollBack();
-                return [
-                    'success' => false,
-                    'message' => __('reset-password-failed')
-                ];
+                throw new ServiceException('Failed to reset password', 'reset-password-failed', 500);
             }
+            DB::commit();
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Reset password failed', [
-                'token' => $token,
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-
-            return [
-                'success' => false,
-                'message' => '密碼重設失敗，請稍後再試',
-                'error' => config('app.debug') ? $e->getMessage() : null
-            ];
+            throw $e;
         }
     }
 
-    public function changePassword(string $currentPassword, string $newPassword): array
+    public function changePassword(string $currentPassword, string $newPassword): void
     {
         $user = Auth::user();
-
         if (!Hash::check($currentPassword, $user->password)) {
-            return [
-                'success' => false,
-                'message' => __('current-password-wrong')
-            ];
+            throw new ServiceException('Current password is wrong', 'current-password-wrong', 400);
         }
-
         $this->userRepository->update($user->id, [
             'password' => Hash::make($newPassword)
         ]);
-
         $this->invalidateUserToken($user);
-
-        return [
-            'success' => true,
-            'message' => __('change-password-success')
-        ];
     }
 
-    public function verifyEmail(string $id, string $hash): array
+    public function verifyEmail(string $id, string $hash): void
     {
         $user = $this->userRepository->find($id);
-
         if (!$user) {
-            return [
-                'success' => false,
-                'message' => __('user-not-found')
-            ];
+            throw new ServiceException('User not found', 'user-not-found', 404);
         }
-
         if ($user->email_verified_at) {
-            return [
-                'success' => true,
-                'message' => __('email-already-verified')
-            ];
+            return;
         }
-
         if (!hash_equals(sha1($user->email), $hash)) {
-            return [
-                'success' => false,
-                'message' => __('invalid-verification-link')
-            ];
+            throw new ServiceException('Invalid verification link', 'invalid-verification-link', 400);
         }
-
         $this->userRepository->update($user->id, [
             'email_verified_at' => now()
         ]);
-
-        return [
-            'success' => true,
-            'message' => __('email-verified-success')
-        ];
     }
 
-    public function resendVerificationEmail(string $email): array
+    public function resendVerificationEmail(string $email): void
     {
         $users = $this->userRepository->index(1, null, 'asc', [], ['*'], [['email', '=', $email]]);
-
         if ($users->isEmpty()) {
-            return [
-                'success' => false,
-                'message' => __('user-not-found')
-            ];
+            throw new ServiceException('User not found', 'user-not-found', 404);
         }
-
         $user = $users->first();
-
         if ($user->email_verified_at) {
-            return [
-                'success' => false,
-                'message' => __('email-already-verified')
-            ];
+            throw new ServiceException('Email already verified', 'email-already-verified', 400);
         }
-
         $user->sendEmailVerificationNotification();
-
-        return [
-            'success' => true,
-            'message' => __('verification-email-sent')
-        ];
     }
 
     private function generateTokenResponse($user): array
@@ -426,11 +193,21 @@ class AuthService implements AuthServiceInterface
         }
         Cache::put($jwtKey, $jwtToken, $expiresInSeconds);
 
+        // 同步產生 refresh token，改用 Cache 儲存
+        $refreshToken = Str::random(64);
+        $refreshKey = 'refresh_token:' . $refreshToken;
+        $refreshExpiredAt = now()->addHours(3);
+        Cache::put($refreshKey, [
+            'user_id' => $user->id,
+            'expires_at' => $refreshExpiredAt->toDateTimeString(),
+        ], $refreshExpiredAt);
+
         return [
             'access_token' => $jwtToken,
-            'token_type' => 'bearer',
+            'refresh_token' => $refreshToken,
             'expires_in' => $expiresInSeconds,
             'expired_at' => $expiredAt,
+            'refresh_token_expires_at' => $refreshExpiredAt->toDateTimeString(),
         ];
     }
 

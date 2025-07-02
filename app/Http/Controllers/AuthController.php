@@ -36,22 +36,14 @@ class AuthController extends Controller
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->register($request->validated());
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ], 201);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 400;
+            $user = $this->authService->register($request->validated());
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'data' => $user,
+                'message' => __('register-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '註冊失敗，請稍後再試', 500);
+            return $this->handleException($e, __('register-failed'), 500);
         }
     }
 
@@ -59,198 +51,143 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->login($request->validated());
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 401;
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'data' => [
+                    'user' => $result['user'],
+                    'token' => $result['token'],
+                ],
+                'message' => __('login-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '登入失敗，請稍後再試', 500);
+            return $this->handleException($e, __('login-failed'), 401);
         }
     }
 
     public function logout(): JsonResponse
     {
         try {
-            $result = $this->authService->logout();
-
-            if ($result['success']) {
-                return response()->json([
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 401;
+            $this->authService->logout();
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'message' => __('logout-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '登出失敗，請稍後再試', 500);
+            return $this->handleException($e, __('logout-failed'), 400);
         }
     }
 
     public function refresh(): JsonResponse
     {
         try {
-            $result = $this->authService->refresh();
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 401;
+            $token = $this->authService->refresh();
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'data' => $token,
+                'message' => __('token-refresh-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, 'Token 更新失敗，請稍後再試', 401);
+            return $this->handleException($e, __('token-refresh-failed'), 401);
         }
     }
 
     public function me(): JsonResponse
     {
         try {
-            $result = $this->authService->me();
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 401;
+            $user = $this->authService->me();
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'data' => $user
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '取得使用者資訊失敗', 500);
+            return $this->handleException($e, __('get-user-info-failed'), 401);
         }
     }
 
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->forgotPassword($request->email);
-
-            if ($result['success']) {
-                return response()->json([
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 404;
+            $this->authService->forgotPassword($request->email);
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'message' => __('forgot-password-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '忘記密碼處理失敗', 500);
+            return $this->handleException($e, __('forgot-password-failed'), 400);
         }
     }
 
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->resetPassword($request->token, $request->password);
-
-            if ($result['success']) {
-                return response()->json([
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 400;
+            $this->authService->resetPassword($request->token, $request->password);
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'message' => __('reset-password-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '重設密碼失敗', 400);
+            return $this->handleException($e, __('reset-password-failed'), 400);
         }
     }
 
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->changePassword($request->current_password, $request->new_password);
-
-            if ($result['success']) {
-                return response()->json([
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 400;
+            $this->authService->changePassword($request->current_password, $request->new_password);
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'message' => __('change-password-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '修改密碼失敗', 400);
+            return $this->handleException($e, __('change-password-failed'), 400);
         }
     }
 
     public function verifyEmail(Request $request, $id, $hash): JsonResponse
     {
         try {
-            $result = $this->authService->verifyEmail($id, $hash);
-
-            if ($result['success']) {
-                return response()->json([
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 400;
+            $this->authService->verifyEmail($id, $hash);
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'message' => __('email-verified-success')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '電子郵件驗證失敗', 400);
+            return $this->handleException($e, __('email-verified-failed'), 400);
         }
     }
 
     public function resendVerificationEmail(ResendVerificationRequest $request): JsonResponse
     {
         try {
-            $result = $this->authService->resendVerificationEmail($request->email);
-
-            if ($result['success']) {
-                return response()->json([
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 400;
+            $this->authService->resendVerificationEmail($request->email);
             return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+                'success' => true,
+                'message' => __('verification-email-sent')
+            ]);
         } catch (Exception $e) {
-            return $this->handleException($e, '重新發送驗證郵件失敗', 400);
+            return $this->handleException($e, __('verification-email-send-failed'), 400);
+        }
+    }
+
+    public function refreshByRefreshToken(Request $request): JsonResponse
+    {
+        $request->validate(['refresh_token' => 'required|string']);
+        try {
+            $result = $this->authService->refreshByRefreshToken($request->refresh_token);
+            return response()->json([
+                'success' => true,
+                'data' => $result,
+                'message' => __('token-refresh-success')
+            ]);
+        } catch (Exception $e) {
+            return $this->handleException($e, __('token-refresh-failed'), 401);
         }
     }
 
     /**
      * 統一錯誤處理方法
      */
-    private function handleException(Exception $e, string $defaultMessage, int $defaultCode = 500): JsonResponse
+    protected function handleException(Exception $e, string $defaultMessage, int $defaultCode = 500): JsonResponse
     {
         $statusCode = $defaultCode;
         $message = $defaultMessage;

@@ -11,6 +11,7 @@ use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use Illuminate\Http\JsonResponse;
 use Exception;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -25,27 +26,16 @@ class UserController extends Controller
     {
         try {
             $result = $this->userService->index(
-                $request->input('per_page', 15),
+                $request->input('per_page') ?? 0,
                 $request->input('order_by', 'created_at'),
-                $request->input('order_direction', 'desc'),
+                $request->input('order_direction', 'asc'),
                 $request->input('with', []),
                 $request->getSelectColumns(),
                 $request->input('filters', [])
             );
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 500;
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+            return response()->json($result);
         } catch (Exception $e) {
+            Log::error($e->getMessage());
             return $this->handleException($e, '取得使用者列表失敗', 500);
         }
     }
@@ -53,20 +43,8 @@ class UserController extends Controller
     public function show(ShowUserRequest $request, string $id): JsonResponse
     {
         try {
-            $result = $this->userService->find($id, $request->input('with', []));
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 404;
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+            $result = $this->userService->find($id, $request->getSelectColumns(), $request->input('with', []));
+            return response()->json($result);
         } catch (Exception $e) {
             return $this->handleException($e, '取得使用者資訊失敗', 500);
         }
@@ -76,19 +54,7 @@ class UserController extends Controller
     {
         try {
             $result = $this->userService->create($request->validated());
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ], 201);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 500;
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+            return response()->json($result);
         } catch (Exception $e) {
             return $this->handleException($e, '建立使用者失敗', 500);
         }
@@ -98,19 +64,7 @@ class UserController extends Controller
     {
         try {
             $result = $this->userService->update($id, $request->validated());
-
-            if ($result['success']) {
-                return response()->json([
-                    'result' => $result['data'],
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 404;
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+            return response()->json($result);
         } catch (Exception $e) {
             return $this->handleException($e, '更新使用者失敗', 500);
         }
@@ -120,18 +74,7 @@ class UserController extends Controller
     {
         try {
             $result = $this->userService->delete($id);
-
-            if ($result['success']) {
-                return response()->json([
-                    'message' => $result['message']
-                ]);
-            }
-
-            $code = $result['code'] ?? $result['status_code'] ?? 404;
-            return response()->json([
-                'message' => $result['message'],
-                'error' => $result['error'] ?? null
-            ], $code);
+            return response()->json($result);
         } catch (Exception $e) {
             return $this->handleException($e, '刪除使用者失敗', 500);
         }

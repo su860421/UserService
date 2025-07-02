@@ -27,7 +27,7 @@ trait WithFieldValidation
             return array_values(array_intersect($columns, $this->getAvailableFields()));
         }
         // 沒帶 columns 就回傳全部
-        return $this->getAvailableFields();
+        return ['*'];
     }
 
     // order_by 驗證
