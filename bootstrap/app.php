@@ -12,7 +12,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // 全域中間件 - 統一 JSON 回應格式
+        $middleware->append(\App\Http\Middleware\FormatJsonResponse::class);
+
+        $middleware->alias([
+            'user.email.verified' => \App\Http\Middleware\UserEmailVerified::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

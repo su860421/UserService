@@ -10,6 +10,8 @@ use App\Http\Requests\User\ShowUserRequest;
 use App\Http\Requests\User\StoreUserRequest;
 use App\Http\Requests\User\UpdateUserRequest;
 use Illuminate\Http\JsonResponse;
+use Exception;
+use Illuminate\Support\Facades\Log;
 
 class UserController extends Controller
 {
@@ -22,50 +24,59 @@ class UserController extends Controller
 
     public function index(IndexUserRequest $request): JsonResponse
     {
-        $result = $this->userService->index(
-            $request->input('per_page', 15),
-            $request->input('page', 1),
-            $request->input('order_by', 'created_at'),
-            $request->input('order_direction', 'desc'),
-            $request->getSelectColumns(),
-            $request->input('with', []),
-            $request->input('filters', []),
-            $request->input('search')
-        );
-
-        $statusCode = $result['success'] ? 200 : 500;
-        return response()->json($result, $statusCode);
+        try {
+            $result = $this->userService->index(
+                $request->input('per_page') ?? 0,
+                $request->input('order_by', 'created_at'),
+                $request->input('order_direction', 'asc'),
+                $request->input('with', []),
+                $request->getSelectColumns(),
+                $request->input('filters', [])
+            );
+            return response()->json($result);
+        } catch (Exception $e) {
+            Log::error($e->getMessage());
+            return $this->handleException($e, '取得使用者列表失敗', 500);
+        }
     }
 
     public function show(ShowUserRequest $request, string $id): JsonResponse
     {
-        $result = $this->userService->show($id, $request->input('with', []));
-
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result, $statusCode);
+        try {
+            $result = $this->userService->find($id, $request->getSelectColumns(), $request->input('with', []));
+            return response()->json($result);
+        } catch (Exception $e) {
+            return $this->handleException($e, '取得使用者資訊失敗', 500);
+        }
     }
 
     public function store(StoreUserRequest $request): JsonResponse
     {
-        $result = $this->userService->store($request->validated());
-
-        $statusCode = $result['success'] ? 201 : 500;
-        return response()->json($result, $statusCode);
+        try {
+            $result = $this->userService->create($request->validated());
+            return response()->json($result);
+        } catch (Exception $e) {
+            return $this->handleException($e, '建立使用者失敗', 500);
+        }
     }
 
     public function update(UpdateUserRequest $request, string $id): JsonResponse
     {
-        $result = $this->userService->update($id, $request->validated());
-
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result, $statusCode);
+        try {
+            $result = $this->userService->update($id, $request->validated());
+            return response()->json($result);
+        } catch (Exception $e) {
+            return $this->handleException($e, '更新使用者失敗', 500);
+        }
     }
 
     public function destroy(string $id): JsonResponse
     {
-        $result = $this->userService->destroy($id);
-
-        $statusCode = $result['success'] ? 200 : 404;
-        return response()->json($result, $statusCode);
+        try {
+            $result = $this->userService->delete($id);
+            return response()->json($result);
+        } catch (Exception $e) {
+            return $this->handleException($e, '刪除使用者失敗', 500);
+        }
     }
 }

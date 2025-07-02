@@ -1,19 +1,26 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\EmailVerificationNotification;
+use App\Notifications\ResetPasswordNotification;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 use Symfony\Component\Uid\Ulid;
+use Illuminate\Support\Facades\Log;
+use App\Notifications\ResetPasswordEmailQueued;
 
-class User extends Authenticatable
+class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasFactory, Notifiable, SoftDeletes, HasUlids;
 
     /**
      * The data type of the auto-incrementing ID.
@@ -37,11 +44,11 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'email_verified_at',
         'password',
         'phone',
         'employee_id',
         'is_active',
-        'last_login_at',
     ];
 
     /**
@@ -65,7 +72,6 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'is_active' => 'boolean',
-            'last_login_at' => 'datetime',
             'deleted_at' => 'datetime',
         ];
     }
@@ -82,5 +88,66 @@ class User extends Authenticatable
                 $model->id = (string) new Ulid();
             }
         });
+    }
+
+    /**
+     * Send the email verification notification.
+     *
+     * @return void
+     */
+    public function sendEmailVerificationNotification()
+    {
+        try {
+            $this->notify(new EmailVerificationNotification());
+        } catch (\Exception $e) {
+            Log::error(__('mail.notification_failed'), [
+                'user_id' => $this->id,
+                'email' => $this->email,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Send the password reset notification.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token)
+    {
+        $this->notify(new ResetPasswordNotification($token));
+    }
+
+    /**
+     * Send the reset password notification with custom url.
+     *
+     * @param string $url
+     * @return void
+     */
+    public function sendEmailResetPasswordNotification($url)
+    {
+        $this->notify(new ResetPasswordEmailQueued($url));
+    }
+
+    /**
+     * Get the identifier that will be stored in the subject claim of the JWT.
+     *
+     * @return mixed
+     */
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    /**
+     * Return a key value array, containing any custom claims to be added to the JWT.
+     *
+     * @return array
+     */
+    public function getJWTCustomClaims()
+    {
+        return [];
     }
 }

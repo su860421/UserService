@@ -10,6 +10,7 @@ return [
             'required' => 'Email is required',
             'email' => 'Please enter a valid email address',
             'unique' => 'This email address is already in use',
+            'exists' => 'User not found with this email address',
         ],
         'password' => [
             'required' => 'Password is required',
@@ -101,5 +102,8 @@ return [
         'with_each' => [
             'in' => 'Specified relationship does not exist',
         ],
+    ],
+    'auth.password_reset' => [
+        'invalid_token' => 'Password reset link is invalid or expired',
     ],
 ];
