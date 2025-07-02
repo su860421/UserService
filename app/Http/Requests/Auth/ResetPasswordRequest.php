@@ -55,7 +55,7 @@ class ResetPasswordRequest extends FormRequest
             // 驗證 token 是否有效
             $status = Password::tokenExists($this->email, $this->token);
             if (!$status) {
-                $validator->errors()->add('token', '密碼重設連結無效或已過期');
+                $validator->errors()->add('token', __('auth.password_reset.invalid_token'));
             }
         });
     }

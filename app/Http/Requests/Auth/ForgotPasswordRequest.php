@@ -23,6 +23,7 @@ class ForgotPasswordRequest extends FormRequest
         return [
             'email.required' => __('validation.auth.email.required'),
             'email.email' => __('validation.auth.email.email'),
+            'email.exists' => __('user-not-found'),
         ];
     }
 
