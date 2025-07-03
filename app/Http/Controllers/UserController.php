@@ -12,6 +12,10 @@ use App\Http\Requests\User\UpdateUserRequest;
 use Illuminate\Http\JsonResponse;
 use Exception;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
+use App\Models\User;
+use App\Http\Requests\User\UpdateUserOrganizationsRequest;
+use App\Services\UserService;
 
 class UserController extends Controller
 {
@@ -77,6 +81,26 @@ class UserController extends Controller
             return response()->json($result);
         } catch (Exception $e) {
             return $this->handleException($e, __('delete-user-failed'), 500);
+        }
+    }
+
+    /**
+     * 批次同步 user 與 organizations 的關聯
+     */
+    public function updateOrganizations(UpdateUserOrganizationsRequest $request, User $user, UserService $userService)
+    {
+        try {
+            $userService->syncOrganizations($user, $request->input('organization_ids'));
+            return response()->json(['message' => __('messages.user_organizations_update_success')]);
+        } catch (\Throwable $e) {
+            Log::error('更新 user 與 organizations 關聯失敗', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+            ]);
+            return response()->json([
+                'message' => __('messages.user_organizations_update_failed'),
+                'error' => app()->environment('production') ? null : $e->getMessage(),
+            ], 500);
         }
     }
 }

@@ -35,6 +35,7 @@ Route::name('api.')->prefix('v1')->group(function () {
         Route::middleware(['user.email.verified'])->group(function () {
             Route::apiResource('users', UserController::class);
             Route::apiResource('organizations', OrganizationsController::class);
+            Route::patch('users/{user}/organizations', [UserController::class, 'updateOrganizations'])->name('users.update_organizations');
             // Authorization routes
             Route::prefix('authorization')->name('authorization.')->group(function () {
                 Route::put('users/{id}/roles', [AuthorizationController::class, 'assignRolesToUser'])->name('users.assign_roles');
