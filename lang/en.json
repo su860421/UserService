@@ -43,5 +43,19 @@
     "error-http-forbidden": "You do not have permission to access this resource",
     "mail.notification_failed": "Failed to send email notification",
     "error-unauthorized": "Unauthorized request",
-    "error-email-not-verified": "Please verify your email address first"
+    "error-email-not-verified": "Please verify your email address first",
+    "get-roles-failed": "Failed to get roles list",
+    "create-role-failed": "Failed to create role",
+    "get-role-detail-failed": "Failed to get role detail",
+    "update-role-failed": "Failed to update role",
+    "delete-role-failed": "Failed to delete role",
+    "assign-permission-failed": "Failed to assign permissions",
+    "get-permissions-failed": "Failed to get permissions list",
+    "assign-roles-failed": "Failed to assign roles",
+    "create-role-success": "Role created successfully",
+    "update-role-success": "Role updated successfully",
+    "delete-role-success": "Role deleted successfully",
+    "assign-permission-success": "Permissions assigned successfully",
+    "get-permissions-success": "Permissions list retrieved successfully",
+    "assign-roles-success": "Roles assigned successfully"
 }

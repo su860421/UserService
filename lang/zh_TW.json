@@ -43,5 +43,19 @@
     "error-http-forbidden": "沒有權限訪問此資源",
     "mail.notification_failed": "郵件通知發送失敗",
     "error-unauthorized": "未授權的請求",
-    "error-email-not-verified": "請先驗證您的電子郵件地址"
+    "error-email-not-verified": "請先驗證您的電子郵件地址",
+    "get-roles-failed": "取得角色列表失敗",
+    "create-role-failed": "建立角色失敗",
+    "get-role-detail-failed": "取得角色資訊失敗",
+    "update-role-failed": "更新角色失敗",
+    "delete-role-failed": "刪除角色失敗",
+    "assign-permission-failed": "權限分配失敗",
+    "get-permissions-failed": "取得權限列表失敗",
+    "assign-roles-failed": "分配角色失敗",
+    "create-role-success": "建立角色成功",
+    "update-role-success": "更新角色成功",
+    "delete-role-success": "刪除角色成功",
+    "assign-permission-success": "權限分配成功",
+    "get-permissions-success": "取得權限列表成功",
+    "assign-roles-success": "分配角色成功"
 }

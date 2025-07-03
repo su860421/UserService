@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -33,12 +34,12 @@ Route::name('api.')->prefix('v1')->group(function () {
         Route::middleware(['user.email.verified'])->group(function () {
             Route::apiResource('users', UserController::class);
             // Authorization routes
-            Route::get('authorization/roles', [\App\Http\Controllers\AuthorizationController::class, 'getRole']);
-            Route::post('authorization/roles', [\App\Http\Controllers\AuthorizationController::class, 'createRole']);
-            Route::get('authorization/roles/{id}', [\App\Http\Controllers\AuthorizationController::class, 'getRoleDetail']);
-            Route::put('authorization/roles/{id}', [\App\Http\Controllers\AuthorizationController::class, 'updateRole']);
-            Route::delete('authorization/roles/{id}', [\App\Http\Controllers\AuthorizationController::class, 'deleteRole']);
-            Route::put('authorization/roles/{id}/permissions', [\App\Http\Controllers\AuthorizationController::class, 'assignPermissionToRole']);
+            Route::prefix('authorization')->name('authorization.')->group(function () {
+                Route::put('users/{id}/roles', [AuthorizationController::class, 'assignRolesToUser'])->name('users.assign_roles');
+                Route::get('permissions', [AuthorizationController::class, 'permissionIndex'])->name('permissions.index');
+                Route::apiResource('roles', AuthorizationController::class);
+                Route::put('roles/{id}/permissions', [AuthorizationController::class, 'assignPermissionToRole'])->name('roles.permissions');
+            });
         });
     });
 });

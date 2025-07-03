@@ -10,4 +10,6 @@ interface AuthorizationServiceInterface
     public function updateRole(int $id, array $data);
     public function deleteRole(int $id);
     public function assignPermissionToRole(int $roleId, array $permissionIds);
+    public function getPermissions();
+    public function assignRolesToUser(int $userId, array $roles);
 }

@@ -6,6 +6,7 @@ use App\Contracts\AuthorizationServiceInterface;
 use Spatie\Permission\Models\Role;
 use Spatie\Permission\Models\Permission;
 use Illuminate\Support\Facades\DB;
+use App\Models\User;
 
 class AuthorizationService implements AuthorizationServiceInterface
 {
@@ -42,5 +43,17 @@ class AuthorizationService implements AuthorizationServiceInterface
         $role = Role::findOrFail($roleId);
         $role->syncPermissions($permissionIds);
         return $role->load('permissions');
+    }
+
+    public function getPermissions()
+    {
+        return Permission::all();
+    }
+
+    public function assignRolesToUser(int $userId, array $roles)
+    {
+        $user = User::findOrFail($userId);
+        $user->syncRoles($roles);
+        return $user->load('roles');
     }
 }
