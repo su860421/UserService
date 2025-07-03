@@ -57,5 +57,14 @@
     "delete-role-success": "Role deleted successfully",
     "assign-permission-success": "Permissions assigned successfully",
     "get-permissions-success": "Permissions list retrieved successfully",
-    "assign-roles-success": "Roles assigned successfully"
+    "assign-roles-success": "Roles assigned successfully",
+    "get-organiztions-failed": "Failed to get organization list",
+    "get-organiztions-info-failed": "Failed to get organization info",
+    "create-organiztions-failed": "Failed to create organization",
+    "update-organiztions-failed": "Failed to update organization",
+    "delete-organiztions-failed": "Failed to delete organization",
+    "get-users-failed": "Failed to get user list",
+    "create-user-failed": "Failed to create user",
+    "update-user-failed": "Failed to update user",
+    "delete-user-failed": "Failed to delete user"
 }

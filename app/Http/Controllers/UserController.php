@@ -36,7 +36,7 @@ class UserController extends Controller
             return response()->json($result);
         } catch (Exception $e) {
             Log::error($e->getMessage());
-            return $this->handleException($e, '取得使用者列表失敗', 500);
+            return $this->handleException($e, __('get-users-failed'), 500);
         }
     }
 
@@ -46,7 +46,7 @@ class UserController extends Controller
             $result = $this->userService->find($id, $request->getSelectColumns(), $request->input('with', []));
             return response()->json($result);
         } catch (Exception $e) {
-            return $this->handleException($e, '取得使用者資訊失敗', 500);
+            return $this->handleException($e, __('get-user-info-failed'), 500);
         }
     }
 
@@ -56,7 +56,7 @@ class UserController extends Controller
             $result = $this->userService->create($request->validated());
             return response()->json($result);
         } catch (Exception $e) {
-            return $this->handleException($e, '建立使用者失敗', 500);
+            return $this->handleException($e, __('create-user-failed'), 500);
         }
     }
 
@@ -66,7 +66,7 @@ class UserController extends Controller
             $result = $this->userService->update($id, $request->validated());
             return response()->json($result);
         } catch (Exception $e) {
-            return $this->handleException($e, '更新使用者失敗', 500);
+            return $this->handleException($e, __('update-user-failed'), 500);
         }
     }
 
@@ -76,7 +76,7 @@ class UserController extends Controller
             $result = $this->userService->delete($id);
             return response()->json($result);
         } catch (Exception $e) {
-            return $this->handleException($e, '刪除使用者失敗', 500);
+            return $this->handleException($e, __('delete-user-failed'), 500);
         }
     }
 }
