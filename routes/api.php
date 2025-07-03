@@ -6,7 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\OrganiztionsController;
+use App\Http\Controllers\OrganizationsController;
 
 Route::name('api.')->prefix('v1')->group(function () {
     // Health check
@@ -34,7 +34,7 @@ Route::name('api.')->prefix('v1')->group(function () {
         // User management routes (with email verification)
         Route::middleware(['user.email.verified'])->group(function () {
             Route::apiResource('users', UserController::class);
-            Route::apiResource('organiztions', OrganiztionsController::class);
+            Route::apiResource('organizations', OrganizationsController::class);
             // Authorization routes
             Route::prefix('authorization')->name('authorization.')->group(function () {
                 Route::put('users/{id}/roles', [AuthorizationController::class, 'assignRolesToUser'])->name('users.assign_roles');

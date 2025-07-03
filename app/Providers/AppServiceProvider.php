@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-use App\Contracts\OrganiztionsServiceInterface;
-use App\Services\OrganiztionsService;
-use App\Contracts\OrganiztionsRepositoryInterface;
-use App\Repositories\OrganiztionsRepository;
+use App\Contracts\OrganizationsServiceInterface;
+use App\Services\OrganizationsService;
+use App\Contracts\OrganizationsRepositoryInterface;
+use App\Repositories\OrganizationsRepository;
 
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\UserRepositoryInterface;
@@ -28,8 +28,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserServiceInterface::class, UserService::class);
         $this->app->bind(AuthServiceInterface::class, AuthService::class);
         $this->app->bind(AuthorizationServiceInterface::class, AuthorizationService::class);
-        $this->app->bind(OrganiztionsServiceInterface::class, OrganiztionsService::class);
-        $this->app->bind(OrganiztionsRepositoryInterface::class, OrganiztionsRepository::class);
+        $this->app->bind(OrganizationsServiceInterface::class, OrganizationsService::class);
+        $this->app->bind(OrganizationsRepositoryInterface::class, OrganizationsRepository::class);
     }
 
     /**

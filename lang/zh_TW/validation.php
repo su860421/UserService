@@ -117,7 +117,7 @@ return [
     'auth.password_reset' => [
         'invalid_token' => '密碼重設連結無效或已過期',
     ],
-    'organiztions' => [
+    'organizations' => [
         'name' => [
             'required' => '部門名稱為必填欄位',
             'string' => '部門名稱必須為字串',

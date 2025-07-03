@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests\Organiztions;
+namespace App\Http\Requests\Organizations;
 
+use App\Http\Requests\Traits\WithFieldValidation;
 use Illuminate\Foundation\Http\FormRequest;
+use App\Models\Organizations;
 
-class IndexOrganiztionsRequest extends FormRequest
+class ShowOrganizationsRequest extends FormRequest
 {
+    use WithFieldValidation
+
     /**
      * Determine if the user is authorized to make this request.
      */
@@ -22,12 +26,12 @@ class IndexOrganiztionsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'per_page' => ['integer', 'min:1', 'max:100'],
-            'order_by' => ['string'],
-            'order_direction' => ['in:asc,desc'],
-            'with' => ['array'],
-            'columns' => ['array'],
-            'filters' => ['array'],
+            'columns' => $this->getColumnsRule(),
         ];
+    }
+
+    protected function model(): Organizations
+    {
+        return new Organizations();
     }
 }

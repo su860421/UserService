@@ -6,7 +6,7 @@ namespace App\Contracts;
 
 use JoeSu\LaravelScaffold\BaseRepositoryInterface;
 
-interface OrganiztionsRepositoryInterface extends BaseRepositoryInterface
+interface OrganizationsRepositoryInterface extends BaseRepositoryInterface
 {
     // Add custom methods here
 }

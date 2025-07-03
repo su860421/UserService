@@ -39,7 +39,7 @@ return [
         'description' => '角色描述',
         'permissions' => '權限',
     ],
-    'organiztions' => [
+    'organizations' => [
         'name' => '部門名稱',
         'type' => '部門類型',
         'parent_id' => '上層部門',

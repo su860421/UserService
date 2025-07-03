@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('organiztions', function (Blueprint $table) {
+        Schema::create('organizations', function (Blueprint $table) {
             $table->ulid('id')->primary()->comment('主鍵 ULID');
             $table->string('name')->comment('部門名稱');
             $table->string('type')->nullable()->comment('部門類型');
-            $table->foreignUlid('parent_id')->nullable()->constrained('organiztions')->nullOnDelete()->comment('上層部門');
+            $table->foreignUlid('parent_id')->nullable()->constrained('organizations')->nullOnDelete()->comment('上層部門');
             $table->foreignUlid('manager_user_id')->nullable()->constrained('users')->nullOnDelete()->comment('部門主管');
             $table->string('address')->nullable()->comment('地址');
             $table->string('phone')->nullable()->comment('電話');
@@ -36,6 +36,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('organiztions');
+        Schema::dropIfExists('organizations');
     }
 };
