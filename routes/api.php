@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\AuthorizationController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -32,6 +33,13 @@ Route::name('api.')->prefix('v1')->group(function () {
         // User management routes (with email verification)
         Route::middleware(['user.email.verified'])->group(function () {
             Route::apiResource('users', UserController::class);
+            // Authorization routes
+            Route::prefix('authorization')->name('authorization.')->group(function () {
+                Route::put('users/{id}/roles', [AuthorizationController::class, 'assignRolesToUser'])->name('users.assign_roles');
+                Route::get('permissions', [AuthorizationController::class, 'permissionIndex'])->name('permissions.index');
+                Route::apiResource('roles', AuthorizationController::class);
+                Route::put('roles/{id}/permissions', [AuthorizationController::class, 'assignPermissionToRole'])->name('roles.permissions');
+            });
         });
     });
 });

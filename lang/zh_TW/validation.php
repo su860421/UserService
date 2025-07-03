@@ -10,6 +10,7 @@ return [
             'required' => '電子郵件為必填欄位',
             'email' => '請輸入有效的電子郵件地址',
             'unique' => '此電子郵件地址已被使用',
+            'exists' => '找不到該電子郵件地址的用戶',
         ],
         'password' => [
             'required' => '密碼為必填欄位',
@@ -102,5 +103,18 @@ return [
         'with_each' => [
             'in' => '指定的關聯不存在',
         ],
+    ],
+    'role' => [
+        'name' => [
+            'required' => '角色名稱為必填欄位',
+            'unique' => '角色名稱已存在',
+        ],
+        'permissions' => [
+            'required' => '權限為必填欄位',
+            'exists' => '所選權限不存在',
+        ],
+    ],
+    'auth.password_reset' => [
+        'invalid_token' => '密碼重設連結無效或已過期',
     ],
 ];

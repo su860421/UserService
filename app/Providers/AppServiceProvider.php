@@ -9,6 +9,8 @@ use App\Contracts\AuthServiceInterface;
 use App\Repositories\UserRepository;
 use App\Services\UserService;
 use App\Services\AuthService;
+use App\Contracts\AuthorizationServiceInterface;
+use App\Services\AuthorizationService;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -20,6 +22,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
         $this->app->bind(UserServiceInterface::class, UserService::class);
         $this->app->bind(AuthServiceInterface::class, AuthService::class);
+        $this->app->bind(AuthorizationServiceInterface::class, AuthorizationService::class);
     }
 
     /**
