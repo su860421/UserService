@@ -43,6 +43,10 @@ Route::name('api.')->prefix('v1')->group(function () {
                 Route::apiResource('roles', AuthorizationController::class);
                 Route::put('roles/{id}/permissions', [AuthorizationController::class, 'assignPermissionToRole'])->name('roles.permissions');
             });
+            Route::get('organizations/tree', [OrganizationsController::class, 'tree'])->name('organizations.tree');
+            Route::get('organizations/{id}/children', [OrganizationsController::class, 'children'])->name('organizations.children');
+            Route::get('organizations/{id}/users', [OrganizationsController::class, 'users'])->name('organizations.users');
+            Route::get('organizations/{id}/stats', [OrganizationsController::class, 'stats'])->name('organizations.stats');
         });
     });
 });

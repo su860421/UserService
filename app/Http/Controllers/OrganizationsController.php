@@ -96,6 +96,58 @@ class OrganizationsController extends Controller
         }
     }
 
+    /**
+     * 取得完整組織樹狀結構
+     */
+    public function tree(): JsonResponse
+    {
+        try {
+            $tree = $this->organizationsService->getOrganizationTree();
+            return response()->json($tree);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __('organization_tree_failed'), 500);
+        }
+    }
+
+    /**
+     * 取得指定組織的子組織列表
+     */
+    public function children(string $id): JsonResponse
+    {
+        try {
+            $children = $this->organizationsService->getChildren($id);
+            return response()->json($children);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __('organization_children_failed'), 500);
+        }
+    }
+
+    /**
+     * 取得組織成員列表，含角色權限
+     */
+    public function users(string $id): JsonResponse
+    {
+        try {
+            $users = $this->organizationsService->getUsersWithRoles($id);
+            return response()->json($users);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __('organization_users_failed'), 500);
+        }
+    }
+
+    /**
+     * 取得組織統計數據（報銷、預算、人員）
+     */
+    public function stats(string $id): JsonResponse
+    {
+        try {
+            $stats = $this->organizationsService->getStats($id);
+            return response()->json($stats);
+        } catch (\Throwable $e) {
+            return $this->handleException($e, __('organization_stats_failed'), 500);
+        }
+    }
+
     protected function handleException(\Exception $e, string $defaultMessage, int $defaultCode = 500): \Illuminate\Http\JsonResponse
     {
         return parent::handleException($e, $defaultMessage, $defaultCode);
