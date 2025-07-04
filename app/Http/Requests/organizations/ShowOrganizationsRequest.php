@@ -10,7 +10,7 @@ use App\Models\Organizations;
 
 class ShowOrganizationsRequest extends FormRequest
 {
-    use WithFieldValidation
+    use WithFieldValidation;
 
     /**
      * Determine if the user is authorized to make this request.

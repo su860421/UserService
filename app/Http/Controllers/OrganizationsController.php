@@ -25,6 +25,44 @@ class OrganizationsController extends Controller
 
     /**
      * Display all Organizations (supports pagination, sorting, relationships, filtering)
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     data: array{
+     *       id: string,
+     *       name: string,
+     *       type: string,
+     *       parent_id: string|null,
+     *       manager_user_id: string|null,
+     *       address: string|null,
+     *       phone: string|null,
+     *       email: string|null,
+     *       monthly_budget: string|null,
+     *       approval_settings: array|null,
+     *       settings: array|null,
+     *       cost_center_code: string|null,
+     *       status: string,
+     *       created_at: string,
+     *       updated_at: string,
+     *       parent: array|null,
+     *       children: array|null,
+     *       manager: array|null,
+     *       users: array|null
+     *     }[],
+     *     meta: array{
+     *       current_page: int,
+     *       per_page: int,
+     *       total: int,
+     *       last_page: int,
+     *       from: int|null,
+     *       to: int|null
+     *     }
+     *   },
+     *   timestamp: int
+     * }
      */
     public function index(IndexOrganizationsRequest $request): JsonResponse
     {
@@ -37,6 +75,7 @@ class OrganizationsController extends Controller
                 $request->get('columns', ['*']),
                 $request->input('filters', [])
             );
+
             return response()->json($result);
         } catch (Exception $e) {
             Log::error($e->getMessage());
@@ -46,11 +85,40 @@ class OrganizationsController extends Controller
 
     /**
      * Display specific Organization
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     type: string,
+     *     parent_id: string|null,
+     *     manager_user_id: string|null,
+     *     address: string|null,
+     *     phone: string|null,
+     *     email: string|null,
+     *     monthly_budget: string|null,
+     *     approval_settings: array|null,
+     *     settings: array|null,
+     *     cost_center_code: string|null,
+     *     status: string,
+     *     created_at: string,
+     *     updated_at: string,
+     *     parent: array|null,
+     *     children: array|null,
+     *     manager: array|null,
+     *     users: array|null
+     *   },
+     *   timestamp: int
+     * }
      */
     public function show(ShowOrganizationsRequest $request, string $id): JsonResponse
     {
         try {
             $result = $this->organizationsService->find($id, $request->get('columns', ['*']), $request->input('with', []));
+
             return response()->json($result);
         } catch (Exception $e) {
             return $this->handleException($e, __('get-organizations-info-failed'), 500);
@@ -59,12 +127,38 @@ class OrganizationsController extends Controller
 
     /**
      * Create new Organization
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 201,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     type: string,
+     *     parent_id: string|null,
+     *     manager_user_id: string|null,
+     *     address: string|null,
+     *     phone: string|null,
+     *     email: string|null,
+     *     monthly_budget: string|null,
+     *     approval_settings: array|null,
+     *     settings: array|null,
+     *     cost_center_code: string|null,
+     *     status: string,
+     *     created_at: string,
+     *     updated_at: string
+     *   },
+     *   timestamp: int
+     * }
+     * @status 201
      */
     public function store(StoreOrganizationsRequest $request): JsonResponse
     {
         try {
             $result = $this->organizationsService->create($request->validated());
-            return response()->json($result);
+
+            return response()->json($result, 201);
         } catch (Exception $e) {
             return $this->handleException($e, __('create-organizations-failed'), 500);
         }
@@ -72,11 +166,36 @@ class OrganizationsController extends Controller
 
     /**
      * Update Organization
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     type: string,
+     *     parent_id: string|null,
+     *     manager_user_id: string|null,
+     *     address: string|null,
+     *     phone: string|null,
+     *     email: string|null,
+     *     monthly_budget: string|null,
+     *     approval_settings: array|null,
+     *     settings: array|null,
+     *     cost_center_code: string|null,
+     *     status: string,
+     *     created_at: string,
+     *     updated_at: string
+     *   },
+     *   timestamp: int
+     * }
      */
     public function update(UpdateOrganizationsRequest $request, string $id): JsonResponse
     {
         try {
             $result = $this->organizationsService->update($id, $request->validated());
+
             return response()->json($result);
         } catch (Exception $e) {
             return $this->handleException($e, __('update-organizations-failed'), 500);
@@ -85,6 +204,14 @@ class OrganizationsController extends Controller
 
     /**
      * Delete Organization
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: null,
+     *   timestamp: int
+     * }
      */
     public function destroy(string $id): JsonResponse
     {
@@ -97,7 +224,36 @@ class OrganizationsController extends Controller
     }
 
     /**
-     * 取得完整組織樹狀結構
+     * 取得完整組織樹狀結構（遞迴載入全部子組織）
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     type: string,
+     *     parent_id: string|null,
+     *     status: string,
+     *     children: array{
+     *       id: string,
+     *       name: string,
+     *       type: string,
+     *       parent_id: string,
+     *       status: string,
+     *       children: array{
+     *         id: string,
+     *         name: string,
+     *         type: string,
+     *         parent_id: string,
+     *         status: string,
+     *         children: array
+     *       }[]
+     *     }[]
+     *   }[],
+     *   timestamp: int
+     * }
      */
     public function tree(): JsonResponse
     {
@@ -110,7 +266,36 @@ class OrganizationsController extends Controller
     }
 
     /**
-     * 取得指定組織的子組織列表
+     * 取得指定組織的子組織列表（遞迴載入全部子組織）
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     type: string,
+     *     parent_id: string,
+     *     status: string,
+     *     children: array{
+     *       id: string,
+     *       name: string,
+     *       type: string,
+     *       parent_id: string,
+     *       status: string,
+     *       children: array{
+     *         id: string,
+     *         name: string,
+     *         type: string,
+     *         parent_id: string,
+     *         status: string,
+     *         children: array
+     *       }[]
+     *     }[]
+     *   }[],
+     *   timestamp: int
+     * }
      */
     public function children(string $id): JsonResponse
     {
@@ -124,6 +309,44 @@ class OrganizationsController extends Controller
 
     /**
      * 取得組織成員列表，含角色權限
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     email: string,
+     *     phone: string|null,
+     *     employee_id: string|null,
+     *     is_active: boolean,
+     *     email_verified_at: string|null,
+     *     created_at: string,
+     *     updated_at: string,
+     *     pivot: array{
+     *       organization_id: string,
+     *       user_id: string,
+     *       created_at: string,
+     *       updated_at: string
+     *     },
+     *     roles: array{
+     *       id: string,
+     *       name: string,
+     *       guard_name: string,
+     *       created_at: string,
+     *       updated_at: string,
+     *       permissions: array{
+     *         id: string,
+     *         name: string,
+     *         guard_name: string,
+     *         created_at: string,
+     *         updated_at: string
+     *       }[]
+     *     }[]
+     *   }[],
+     *   timestamp: int
+     * }
      */
     public function users(string $id): JsonResponse
     {
@@ -137,6 +360,33 @@ class OrganizationsController extends Controller
 
     /**
      * 取得組織統計數據（報銷、預算、人員）
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     organization_id: string,
+     *     organization_name: string,
+     *     total_users: int,
+     *     active_users: int,
+     *     inactive_users: int,
+     *     monthly_budget: string,
+     *     budget_used: string,
+     *     budget_remaining: string,
+     *     budget_usage_percentage: float,
+     *     total_expenses: int,
+     *     pending_expenses: int,
+     *     approved_expenses: int,
+     *     rejected_expenses: int,
+     *     total_expense_amount: string,
+     *     average_expense_amount: string,
+     *     last_expense_date: string|null,
+     *     created_at: string,
+     *     updated_at: string
+     *   },
+     *   timestamp: int
+     * }
      */
     public function stats(string $id): JsonResponse
     {
