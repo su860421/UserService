@@ -14,7 +14,9 @@ class DatabaseSeeder extends Seeder
     {
         // 調用 UserSeeder
         $this->call([
+            RolePermissionSeeder::class,
             UserSeeder::class,
+            OrganizationsSeeder::class,
         ]);
 
         // 如果需要額外的測試用戶，可以使用 factory
