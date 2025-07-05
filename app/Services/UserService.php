@@ -16,4 +16,16 @@ class UserService extends BaseService implements UserServiceInterface
     }
 
     // Add business logic methods here
+
+    /**
+     * 批次同步 user 與 organizations 的關聯
+     *
+     * @param \App\Models\User $user
+     * @param array $organizationIds
+     * @return void
+     */
+    public function syncOrganizations(\App\Models\User $user, array $organizationIds): void
+    {
+        $user->organizations()->sync($organizationIds);
+    }
 }

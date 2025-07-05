@@ -57,5 +57,15 @@
     "delete-role-success": "刪除角色成功",
     "assign-permission-success": "權限分配成功",
     "get-permissions-success": "取得權限列表成功",
-    "assign-roles-success": "分配角色成功"
+    "assign-roles-success": "分配角色成功",
+    "get-organizations-failed": "取得組織列表失敗",
+    "get-organizations-info-failed": "取得組織資訊失敗",
+    "create-organizations-failed": "建立組織失敗",
+    "update-organizations-failed": "更新組織失敗",
+    "delete-organizations-failed": "刪除組織失敗",
+    "get-users-failed": "取得使用者列表失敗",
+    "get-user-info-failed": "取得使用者資訊失敗",
+    "create-user-failed": "建立使用者失敗",
+    "update-user-failed": "更新使用者失敗",
+    "delete-user-failed": "刪除使用者失敗"
 }
