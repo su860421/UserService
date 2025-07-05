@@ -6,6 +6,8 @@ use App\Contracts\OrganizationsServiceInterface;
 use App\Services\OrganizationsService;
 use App\Contracts\OrganizationsRepositoryInterface;
 use App\Repositories\OrganizationsRepository;
+use App\Models\Organizations;
+use App\Observers\OrganizationsObserver;
 
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\UserRepositoryInterface;
@@ -37,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // 註冊 Organizations Observer
+        \App\Models\Organizations::observe(\App\Observers\OrganizationsObserver::class);
     }
 }

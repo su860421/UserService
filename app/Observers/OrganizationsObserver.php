@@ -6,41 +6,34 @@ namespace App\Observers;
 
 use App\Models\Organizations;
 use Illuminate\Support\Facades\Cache;
-use Carbon\Carbon;
 
 class OrganizationsObserver
 {
     public function created(Organizations $organization): void
     {
-        $this->clearCache($organization);
+        $this->clearCache();
     }
 
     public function updated(Organizations $organization): void
     {
-        $this->clearCache($organization);
+        $this->clearCache();
     }
 
     public function deleted(Organizations $organization): void
     {
-        $this->clearCache($organization);
+        $this->clearCache();
     }
 
     public function restored(Organizations $organization): void
     {
-        $this->clearCache($organization);
+        $this->clearCache();
     }
 
-    private function clearCache(Organizations $organization): void
+    /**
+     * 清除組織樹 cache
+     */
+    private function clearCache(): void
     {
-        $today = Carbon::today()->format('Y-m-d');
-
-        // 清除整棵組織樹 cache（當日）
-        Cache::forget("organizations_tree_{$today}");
-        // 清除該組織的 children cache（當日）
-        Cache::forget("organizations_children_{$organization->id}_{$today}");
-        // 清除父組織的 children cache（當日，如果有父組織）
-        if ($organization->parent_id) {
-            Cache::forget("organizations_children_{$organization->parent_id}_{$today}");
-        }
+        Cache::forget('organizations_tree');
     }
 }

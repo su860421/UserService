@@ -121,7 +121,7 @@ class OrganizationsController extends Controller
 
             return response()->json($result);
         } catch (Exception $e) {
-            return $this->handleException($e, __('get-organizations-info-failed'), 500);
+            return $this->handleException($e, __('get-organizations-info-failed'), 404);
         }
     }
 

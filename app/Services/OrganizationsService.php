@@ -9,6 +9,9 @@ use App\Contracts\OrganizationsRepositoryInterface;
 use App\Contracts\UserRepositoryInterface;
 use JoeSu\LaravelScaffold\BaseService;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\Cache;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class OrganizationsService extends BaseService implements OrganizationsServiceInterface
 {
@@ -23,27 +26,56 @@ class OrganizationsService extends BaseService implements OrganizationsServiceIn
     }
 
     /**
-     * 取得完整組織樹狀結構（僅 root + 第一層，避免全撈造成效能問題）
-     * 如需完整樹狀，建議前端 lazy load 或快取
+     * 取得完整組織樹狀結構
      */
     public function getOrganizationTree()
     {
-        return $this->repository->index(
-            perPage: 0, // 不分頁，取得全部
-            relationships: ['children'], // 預載入子組織
-            filters: [['parent_id', '=', null]] // 只取 root 組織
+        Log::info(Cache::get('organizations_tree'));
+        return Cache::remember(
+            'organizations_tree',
+            Carbon::now()->diffInSeconds(Carbon::tomorrow()), // 正向計算
+            function () {
+                Log::info('getOrganizationTree');
+                return $this->repository->index(
+                    perPage: 0,
+                    orderBy: 'name',
+                    orderDirection: 'asc',
+                    relationships: ['childrenRecursive'],
+                    columns: ['id', 'name', 'type', 'parent_id', 'status'],
+                    filters: [['parent_id', '=', null]]
+                );
+            }
         );
     }
 
     /**
-     * 取得指定組織的子組織列表（單層）
+     * 取得指定組織的子組織列表
      */
     public function getChildren(string $id)
     {
-        return $this->repository->index(
-            perPage: 0, // 不分頁，取得全部
-            filters: [['parent_id', '=', $id]] // 指定父組織
-        );
+        $fullTree = $this->getOrganizationTree();
+        return $this->findChildrenFromTree($fullTree, $id);
+    }
+
+    /**
+     * 從完整組織樹中遞迴查找指定組織的子組織
+     */
+    private function findChildrenFromTree($organizations, string $parentId)
+    {
+        foreach ($organizations as $org) {
+            if ($org->id === $parentId) {
+                return $org->childrenRecursive ?? collect();
+            }
+
+            if (isset($org->childrenRecursive) && $org->childrenRecursive->isNotEmpty()) {
+                $result = $this->findChildrenFromTree($org->childrenRecursive, $parentId);
+                if ($result->isNotEmpty()) {
+                    return $result;
+                }
+            }
+        }
+
+        return collect();
     }
 
     /**

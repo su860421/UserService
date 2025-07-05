@@ -63,6 +63,17 @@ class Organizations extends Model
         return $this->hasMany(self::class, 'parent_id');
     }
 
+    /**
+     * 遞迴載入全部子組織
+     * @return HasMany<Organizations>
+     */
+    public function childrenRecursive(): HasMany
+    {
+        return $this->hasMany(self::class, 'parent_id')
+            ->with(['childrenRecursive:id,name,type,parent_id,status'])
+            ->select(['id', 'name', 'type', 'parent_id', 'status']);
+    }
+
     /** @return BelongsTo<User,Organizations> */
     public function manager(): BelongsTo
     {
@@ -71,6 +82,6 @@ class Organizations extends Model
 
     public function users()
     {
-        return $this->belongsToMany(User::class, 'organization_user');
+        return $this->belongsToMany(User::class, 'organization_user', 'organization_id', 'user_id');
     }
 }

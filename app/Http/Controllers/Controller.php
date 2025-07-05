@@ -53,8 +53,14 @@ abstract class Controller
         ]);
 
         return response()->json([
+            'status' => 'not_found',
+            'statusCode' => $statusCode,
             'message' => $message,
-            'error' => config('app.debug') ? $e->getMessage() : null
+            'result' => [
+                'message' => $message,
+                'error' => config('app.debug') ? $e->getMessage() : null
+            ],
+            'timestamp' => time()
         ], $statusCode);
     }
 }
