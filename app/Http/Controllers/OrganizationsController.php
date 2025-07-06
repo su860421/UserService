@@ -34,7 +34,7 @@ class OrganizationsController extends Controller
      *     data: array{
      *       id: string,
      *       name: string,
-     *       type: string,
+     *       type: string|null,
      *       parent_id: string|null,
      *       manager_user_id: string|null,
      *       address: string|null,
@@ -44,7 +44,7 @@ class OrganizationsController extends Controller
      *       approval_settings: array|null,
      *       settings: array|null,
      *       cost_center_code: string|null,
-     *       status: string,
+     *       status: int,
      *       created_at: string,
      *       updated_at: string,
      *       parent: array|null,
@@ -61,7 +61,8 @@ class OrganizationsController extends Controller
      *       to: int|null
      *     }
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function index(IndexOrganizationsRequest $request): JsonResponse
@@ -93,7 +94,7 @@ class OrganizationsController extends Controller
      *   result: array{
      *     id: string,
      *     name: string,
-     *     type: string,
+     *     type: string|null,
      *     parent_id: string|null,
      *     manager_user_id: string|null,
      *     address: string|null,
@@ -103,7 +104,7 @@ class OrganizationsController extends Controller
      *     approval_settings: array|null,
      *     settings: array|null,
      *     cost_center_code: string|null,
-     *     status: string,
+     *     status: int,
      *     created_at: string,
      *     updated_at: string,
      *     parent: array|null,
@@ -111,7 +112,8 @@ class OrganizationsController extends Controller
      *     manager: array|null,
      *     users: array|null
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function show(ShowOrganizationsRequest $request, string $id): JsonResponse
@@ -135,7 +137,7 @@ class OrganizationsController extends Controller
      *   result: array{
      *     id: string,
      *     name: string,
-     *     type: string,
+     *     type: string|null,
      *     parent_id: string|null,
      *     manager_user_id: string|null,
      *     address: string|null,
@@ -145,11 +147,12 @@ class OrganizationsController extends Controller
      *     approval_settings: array|null,
      *     settings: array|null,
      *     cost_center_code: string|null,
-     *     status: string,
+     *     status: int,
      *     created_at: string,
      *     updated_at: string
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      * @status 201
      */
@@ -174,7 +177,7 @@ class OrganizationsController extends Controller
      *   result: array{
      *     id: string,
      *     name: string,
-     *     type: string,
+     *     type: string|null,
      *     parent_id: string|null,
      *     manager_user_id: string|null,
      *     address: string|null,
@@ -184,11 +187,12 @@ class OrganizationsController extends Controller
      *     approval_settings: array|null,
      *     settings: array|null,
      *     cost_center_code: string|null,
-     *     status: string,
+     *     status: int,
      *     created_at: string,
      *     updated_at: string
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function update(UpdateOrganizationsRequest $request, string $id): JsonResponse
@@ -210,7 +214,8 @@ class OrganizationsController extends Controller
      *   statusCode: 200,
      *   message: string,
      *   result: null,
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function destroy(string $id): JsonResponse
@@ -233,26 +238,27 @@ class OrganizationsController extends Controller
      *   result: array{
      *     id: string,
      *     name: string,
-     *     type: string,
+     *     type: string|null,
      *     parent_id: string|null,
-     *     status: string,
+     *     status: int,
      *     children: array{
      *       id: string,
      *       name: string,
-     *       type: string,
+     *       type: string|null,
      *       parent_id: string,
-     *       status: string,
+     *       status: int,
      *       children: array{
      *         id: string,
      *         name: string,
-     *         type: string,
+     *         type: string|null,
      *         parent_id: string,
-     *         status: string,
+     *         status: int,
      *         children: array
      *       }[]
      *     }[]
      *   }[],
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function tree(): JsonResponse
@@ -275,26 +281,27 @@ class OrganizationsController extends Controller
      *   result: array{
      *     id: string,
      *     name: string,
-     *     type: string,
+     *     type: string|null,
      *     parent_id: string,
-     *     status: string,
+     *     status: int,
      *     children: array{
      *       id: string,
      *       name: string,
-     *       type: string,
+     *       type: string|null,
      *       parent_id: string,
-     *       status: string,
+     *       status: int,
      *       children: array{
      *         id: string,
      *         name: string,
-     *         type: string,
+     *         type: string|null,
      *         parent_id: string,
-     *         status: string,
+     *         status: int,
      *         children: array
      *       }[]
      *     }[]
      *   }[],
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function children(string $id): JsonResponse
@@ -345,7 +352,8 @@ class OrganizationsController extends Controller
      *       }[]
      *     }[]
      *   }[],
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function users(string $id): JsonResponse
@@ -385,7 +393,8 @@ class OrganizationsController extends Controller
      *     created_at: string,
      *     updated_at: string
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function stats(string $id): JsonResponse

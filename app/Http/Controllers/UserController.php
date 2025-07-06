@@ -27,7 +27,7 @@ class UserController extends Controller
     }
 
     /**
-     * 取得使用者列表
+     * Display a listing of the resource.
      * 
      * @response array{
      *   status: "success",
@@ -43,9 +43,7 @@ class UserController extends Controller
      *       is_active: boolean,
      *       email_verified_at: string|null,
      *       created_at: string,
-     *       updated_at: string,
-     *       organizations: array|null,
-     *       roles: array|null
+     *       updated_at: string
      *     }[],
      *     meta: array{
      *       current_page: int,
@@ -56,7 +54,8 @@ class UserController extends Controller
      *       to: int|null
      *     }
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function index(IndexUserRequest $request): JsonResponse
@@ -79,7 +78,7 @@ class UserController extends Controller
     }
 
     /**
-     * 取得單一使用者資料
+     * Display the specified resource.
      * 
      * @response array{
      *   status: "success",
@@ -94,11 +93,10 @@ class UserController extends Controller
      *     is_active: boolean,
      *     email_verified_at: string|null,
      *     created_at: string,
-     *     updated_at: string,
-     *     organizations: array|null,
-     *     roles: array|null
+     *     updated_at: string
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function show(ShowUserRequest $request, string $id): JsonResponse
@@ -113,7 +111,7 @@ class UserController extends Controller
     }
 
     /**
-     * 建立新使用者
+     * Store a newly created resource in storage.
      * 
      * @response array{
      *   status: "success",
@@ -130,7 +128,8 @@ class UserController extends Controller
      *     created_at: string,
      *     updated_at: string
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      * @status 201
      */
@@ -146,7 +145,7 @@ class UserController extends Controller
     }
 
     /**
-     * 更新使用者資料
+     * Update the specified resource in storage.
      * 
      * @response array{
      *   status: "success",
@@ -163,7 +162,8 @@ class UserController extends Controller
      *     created_at: string,
      *     updated_at: string
      *   },
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function update(UpdateUserRequest $request, string $id): JsonResponse
@@ -178,14 +178,15 @@ class UserController extends Controller
     }
 
     /**
-     * 刪除使用者
+     * Remove the specified resource from storage.
      * 
      * @response array{
      *   status: "success",
      *   statusCode: 200,
      *   message: string,
      *   result: null,
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
     public function destroy(string $id): JsonResponse
@@ -199,30 +200,27 @@ class UserController extends Controller
     }
 
     /**
-     * 批次同步 user 與 organizations 的關聯
+     * Update user organizations
      * 
      * @response array{
      *   status: "success",
      *   statusCode: 200,
      *   message: string,
      *   result: null,
-     *   timestamp: int
+     *   timestamp: int,
+     *   success: true
      * }
      */
-    public function updateOrganizations(UpdateUserOrganizationsRequest $request, User $user, UserService $userService)
+    public function updateOrganizations(UpdateUserOrganizationsRequest $request, User $user, UserService $userService): JsonResponse
     {
         try {
             $userService->syncOrganizations($user, $request->input('organization_ids'));
-            return response()->json(['message' => __('messages.user_organizations_update_success')]);
-        } catch (\Throwable $e) {
-            Log::error('更新 user 與 organizations 關聯失敗', [
-                'user_id' => $user->id,
-                'error' => $e->getMessage(),
-            ]);
             return response()->json([
-                'message' => __('messages.user_organizations_update_failed'),
-                'error' => app()->environment('production') ? null : $e->getMessage(),
-            ], 500);
+                'success' => true,
+                'message' => __('messages.user_organizations_update_success')
+            ]);
+        } catch (Exception $e) {
+            return $this->handleException($e, __('messages.user_organizations_update_failed'), 500);
         }
     }
 }

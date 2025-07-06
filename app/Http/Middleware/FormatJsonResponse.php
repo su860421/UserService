@@ -36,7 +36,7 @@ class FormatJsonResponse
                 default => 'unknown',
             };
 
-            $message = match ($statusCode) {
+            $message = $data['message'] ?? match ($statusCode) {
                 200 => 'Resource retrieved successfully',
                 201 => 'Resource created successfully',
                 204 => 'No content',
@@ -53,14 +53,11 @@ class FormatJsonResponse
                 default => 'Unknown error',
             };
 
-            // 允許 Controller 自訂狀態和訊息
-            if (is_array($data)) {
-                $status = $data['status'] ?? $status;
-                $message = $data['message'] ?? $message;
-            }
-
-            // 處理不同資料結構
-            if (isset($data['result'])) {
+            // 支援 data 或 result 欄位
+            $result = null;
+            if (isset($data['data'])) {
+                $result = $data['data'];
+            } elseif (isset($data['result'])) {
                 $result = $data['result'];
             } elseif (is_array($data) && !isset($data['status'])) {
                 $result = $data;
@@ -68,23 +65,27 @@ class FormatJsonResponse
                 $result = $data;
             }
 
+            // 組合標準格式
+            $formattedResponse = [
+                'status' => $status,
+                'statusCode' => $statusCode,
+                'message' => $message,
+                'result' => $result,
+                'timestamp' => now()->timestamp,
+            ];
+
+            // 保留 Controller 自訂的欄位（如 success, error...），但排除 data 欄位避免重複
+            if (is_array($data)) {
+                foreach ($data as $key => $value) {
+                    if (!in_array($key, ['status', 'statusCode', 'message', 'result', 'timestamp', 'data'])) {
+                        $formattedResponse[$key] = $value;
+                    }
+                }
+            }
+
             // 特殊處理驗證錯誤
             if ($statusCode === 422 && is_array($result) && isset($result['errors'])) {
-                $formattedResponse = [
-                    'status' => $status,
-                    'statusCode' => $statusCode,
-                    'message' => $message,
-                    'errors' => $result['errors'],
-                    'timestamp' => now()->timestamp,
-                ];
-            } else {
-                $formattedResponse = [
-                    'status' => $status,
-                    'statusCode' => $statusCode,
-                    'message' => $message,
-                    'result' => $result,
-                    'timestamp' => now()->timestamp,
-                ];
+                $formattedResponse['errors'] = $result['errors'];
             }
 
             // 除錯模式下的額外資訊

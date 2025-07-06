@@ -33,6 +33,29 @@ class AuthController extends Controller
         $this->authService = $authService;
     }
 
+    /**
+     * Register new user
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 201,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     email: string,
+     *     phone: string|null,
+     *     employee_id: string|null,
+     *     is_active: boolean,
+     *     email_verified_at: string|null,
+     *     created_at: string,
+     *     updated_at: string
+     *   },
+     *   timestamp: int,
+     *   success: true
+     * }
+     * @status 201
+     */
     public function register(RegisterRequest $request): JsonResponse
     {
         try {
@@ -41,12 +64,40 @@ class AuthController extends Controller
                 'success' => true,
                 'data' => $user,
                 'message' => __('register-success')
-            ]);
+            ], 201);
         } catch (Exception $e) {
             return $this->handleException($e, __('register-failed'), 500);
         }
     }
 
+    /**
+     * Login user
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     access_token: string,
+     *     refresh_token: string,
+     *     token_type: string,
+     *     expires_in: int,
+     *     user: array{
+     *       id: string,
+     *       name: string,
+     *       email: string,
+     *       phone: string|null,
+     *       employee_id: string|null,
+     *       is_active: boolean,
+     *       email_verified_at: string|null,
+     *       created_at: string,
+     *       updated_at: string
+     *     }
+     *   },
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function login(LoginRequest $request): JsonResponse
     {
         try {
@@ -61,6 +112,18 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Logout user
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: null,
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function logout(): JsonResponse
     {
         try {
@@ -74,6 +137,23 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Refresh token
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     access_token: string,
+     *     refresh_token: string,
+     *     token_type: string,
+     *     expires_in: int
+     *   },
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function refresh(Request $request): JsonResponse
     {
         $request->validate(['refresh_token' => 'required|string']);
@@ -89,19 +169,54 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Get current user info
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: array{
+     *     id: string,
+     *     name: string,
+     *     email: string,
+     *     phone: string|null,
+     *     employee_id: string|null,
+     *     is_active: boolean,
+     *     email_verified_at: string|null,
+     *     created_at: string,
+     *     updated_at: string
+     *   },
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function me(): JsonResponse
     {
         try {
             $user = $this->authService->me();
             return response()->json([
                 'success' => true,
-                'data' => $user
+                'data' => $user,
+                'message' => __('get-user-info-success')
             ]);
         } catch (Exception $e) {
             return $this->handleException($e, __('get-user-info-failed'), 401);
         }
     }
 
+    /**
+     * Send forgot password email
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: null,
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function forgotPassword(ForgotPasswordRequest $request): JsonResponse
     {
         try {
@@ -115,6 +230,18 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Reset password
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: null,
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function resetPassword(ResetPasswordRequest $request): JsonResponse
     {
         try {
@@ -128,6 +255,18 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Change password
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: null,
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function changePassword(ChangePasswordRequest $request): JsonResponse
     {
         try {
@@ -141,6 +280,18 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Verify email
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: null,
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function verifyEmail(Request $request, $id, $hash): JsonResponse
     {
         try {
@@ -154,6 +305,18 @@ class AuthController extends Controller
         }
     }
 
+    /**
+     * Resend verification email
+     * 
+     * @response array{
+     *   status: "success",
+     *   statusCode: 200,
+     *   message: string,
+     *   result: null,
+     *   timestamp: int,
+     *   success: true
+     * }
+     */
     public function resendVerificationEmail(ResendVerificationRequest $request): JsonResponse
     {
         try {
