@@ -63,7 +63,7 @@ abstract class Controller
             $errorCode = 'PERMISSION_DENIED';
         } elseif ($e->getCode() >= 400 && $e->getCode() < 600) {
             $statusCode = $e->getCode();
-            $errorCode = 'HTTP_' . $statusCode;
+            $errorCode = 'HTTP_ERROR_' . $statusCode;
         }
 
         Log::error('API 錯誤', [
