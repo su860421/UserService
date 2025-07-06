@@ -1,0 +1,80 @@
+# .github/workflows/deploy.yml
+
+name: Deploy Laravel to EC2
+
+# 觸發條件：當有程式碼 push 到 main 分支時
+on:
+  push:
+    branches:
+      - main
+
+# 權限設定：允許 Actions 從 AWS 取得 OIDC Token
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  # 定義一個名為 deploy 的工作
+  deploy:
+    # 使用最新的 Ubuntu 虛擬環境來執行此工作
+    runs-on: ubuntu-latest
+    steps:
+      # 步驟 1: 從 GitHub 下載您的程式碼到虛擬機中
+      - name: 1. Checkout Code
+        uses: actions/checkout@v4
+
+      # 步驟 2: 設定 AWS 憑證
+      # 使用我們在 GitHub Secrets 中設定好的 IAM Role ARN，安全地取得臨時權限
+      - name: 2. Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      # 步驟 3: 登入 Amazon ECR
+      # 使用上一步取得的臨時權限登入您的私有映像檔倉庫
+      - name: 3. Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # 步驟 4: 建置、標記並推送 Docker 映像檔到 ECR
+      - name: 4. Build, Tag, and Push Image to ECR
+        id: build-image
+        env:
+          # 從上一步的輸出和 secrets 讀取倉庫資訊
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+          # 使用 Git commit 的 SHA 碼作為映像檔標籤，保證唯一性
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # 根據您的 Dockerfile 建置映像檔
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          # 將建置好的映像檔推送到 ECR
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          # 將完整的映像檔 URI 設為輸出，供後續步驟使用
+          echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      # 步驟 5: 透過 SSH 連線到 EC2 執行部署指令
+      - name: 5. Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          script: |
+            # 進入 EC2 上的部署目錄
+            cd /home/ubuntu/user-service
+
+            # 將 CI/CD 流程中的變數寫入環境變數檔案
+            # 這一行會建立 .env 檔案，裡面包含了最新映像檔的完整 URI，給 docker-compose.yml 使用
+            echo "IMAGE_TAG=${{ steps.build-image.outputs.image_uri }}" > .env
+            
+            # 這一行會建立 laravel.env 檔案，裡面是您 Laravel 應用程式需要的所有環境變數
+            echo "${{ secrets.LARAVEL_ENV }}" > laravel.env
+            
+            # 使用 docker-compose 拉取新版映像檔並重新啟動服務
+            # --build 參數在這裡不是必須，但加上也無妨
+            docker-compose up -d
+
+            # (可選) 清理不再被使用的舊 Docker 映像檔，以節省伺服器空間
+            docker image prune -af
