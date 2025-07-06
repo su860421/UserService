@@ -6,7 +6,7 @@ name: Deploy Laravel to EC2
 on:
   push:
     branches:
-      - main
+      - master
 
 # 權限設定：允許 Actions 從 AWS 取得 OIDC Token
 permissions:
