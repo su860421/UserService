@@ -45,7 +45,7 @@ abstract class Controller
             $statusCode = 401;
             $message = __('error-jwt');
             $errorType = 'authentication_error';
-            $errorCode = 'JWT_ERROR';
+            $errorCode = 'AUTHENTICATION_ERROR';
         } elseif ($e instanceof QueryException) {
             $statusCode = 500;
             $message = __('error-db');
