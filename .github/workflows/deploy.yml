@@ -70,7 +70,9 @@ jobs:
             echo "IMAGE_TAG=${{ steps.build-image.outputs.image_uri }}" > .env
             
             # 這一行會建立 laravel.env 檔案，裡面是您 Laravel 應用程式需要的所有環境變數
-            echo "${{ secrets.LARAVEL_ENV }}" > laravel.env
+            cat <<'EOF' > laravel.env
+            ${{ secrets.LARAVEL_ENV }}
+            EOF
             
             # 使用 docker-compose 拉取新版映像檔並重新啟動服務
             # --build 參數在這裡不是必須，但加上也無妨
