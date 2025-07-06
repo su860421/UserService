@@ -30,7 +30,6 @@ class OrganizationsService extends BaseService implements OrganizationsServiceIn
      */
     public function getOrganizationTree()
     {
-        Log::info(Cache::get('organizations_tree'));
         return Cache::remember(
             'organizations_tree',
             Carbon::now()->diffInSeconds(Carbon::tomorrow()), // 正向計算

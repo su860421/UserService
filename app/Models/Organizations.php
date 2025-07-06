@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use App\Enums\OrganizationStatus;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Organizations extends Model
 {
@@ -80,7 +81,8 @@ class Organizations extends Model
         return $this->belongsTo(User::class, 'manager_user_id');
     }
 
-    public function users()
+    /** @return BelongsToMany<User> */
+    public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'organization_user', 'organization_id', 'user_id');
     }

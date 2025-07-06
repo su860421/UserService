@@ -204,7 +204,7 @@ class OrganizationsSeeder extends Seeder
                         'parent_id' => $department->id,
                         'address' => $department->address,
                         'phone' => $department->phone,
-                        'email' => strtolower(str_replace(['小組', '開發', '設計', '分析', '招募', '訓練', '會計', '財務', '數位', '品牌', '國內', '國際', '產品', '技術'], '', $teams[$teamIndex]['name'])) . '@' . $department->name . '.com',
+                        'email' => 'team' . $teamIndex . '@' . str_replace(' ', '', $department->name) . '.com',
                         'monthly_budget' => 500000,
                         'status' => OrganizationStatus::ACTIVE,
                     ]));
@@ -367,7 +367,7 @@ class OrganizationsSeeder extends Seeder
                         'parent_id' => $team->id,
                         'address' => $team->address,
                         'phone' => $team->phone,
-                        'email' => strtolower(str_replace(['子小組', '開發', '設計', '分析', '招募', '訓練', '帳款', '規劃', '投資', '媒體', '內容', '廣告', '活動', '業務', '產品', '技術'], '', $subTeams[$subTeamIndex]['name'])) . '@' . $team->name . '.com',
+                        'email' => 'subteam' . $subTeamIndex . '@' . str_replace(' ', '', $team->name) . '.com',
                         'monthly_budget' => 200000,
                         'status' => OrganizationStatus::ACTIVE,
                     ]));
