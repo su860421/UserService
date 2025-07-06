@@ -117,4 +117,50 @@ return [
     'auth.password_reset' => [
         'invalid_token' => '密碼重設連結無效或已過期',
     ],
+    'organizations' => [
+        'name' => [
+            'required' => '部門名稱為必填欄位',
+            'string' => '部門名稱必須為字串',
+            'max' => '部門名稱不能超過 255 個字元',
+        ],
+        'type' => [
+            'string' => '部門類型必須為字串',
+            'max' => '部門類型不能超過 255 個字元',
+        ],
+        'parent_id' => [
+            'exists' => '上層部門不存在',
+        ],
+        'manager_user_id' => [
+            'exists' => '部門主管不存在',
+        ],
+        'address' => [
+            'string' => '地址必須為字串',
+            'max' => '地址不能超過 255 個字元',
+        ],
+        'phone' => [
+            'string' => '電話必須為字串',
+            'max' => '電話不能超過 255 個字元',
+        ],
+        'email' => [
+            'email' => '請輸入有效的信箱',
+            'max' => '信箱不能超過 255 個字元',
+        ],
+        'monthly_budget' => [
+            'numeric' => '月預算必須為數字',
+            'min' => '月預算不能小於 0',
+        ],
+        'approval_settings' => [
+            'json' => '審核設定必須為 JSON 格式',
+        ],
+        'settings' => [
+            'json' => '組織設定必須為 JSON 格式',
+        ],
+        'cost_center_code' => [
+            'string' => '成本中心代碼必須為字串',
+            'max' => '成本中心代碼不能超過 255 個字元',
+        ],
+        'status' => [
+            'in' => '狀態必須為 1(啟用) 或 0(停用)',
+        ],
+    ],
 ];

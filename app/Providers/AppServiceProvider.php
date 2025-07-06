@@ -2,6 +2,13 @@
 
 namespace App\Providers;
 
+use App\Contracts\OrganizationsServiceInterface;
+use App\Services\OrganizationsService;
+use App\Contracts\OrganizationsRepositoryInterface;
+use App\Repositories\OrganizationsRepository;
+use App\Models\Organizations;
+use App\Observers\OrganizationsObserver;
+
 use Illuminate\Support\ServiceProvider;
 use App\Contracts\UserRepositoryInterface;
 use App\Contracts\UserServiceInterface;
@@ -23,6 +30,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(UserServiceInterface::class, UserService::class);
         $this->app->bind(AuthServiceInterface::class, AuthService::class);
         $this->app->bind(AuthorizationServiceInterface::class, AuthorizationService::class);
+        $this->app->bind(OrganizationsServiceInterface::class, OrganizationsService::class);
+        $this->app->bind(OrganizationsRepositoryInterface::class, OrganizationsRepository::class);
     }
 
     /**
@@ -30,6 +39,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // 註冊 Organizations Observer
+        \App\Models\Organizations::observe(\App\Observers\OrganizationsObserver::class);
     }
 }

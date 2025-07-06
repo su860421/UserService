@@ -17,10 +17,11 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 use Symfony\Component\Uid\Ulid;
 use Illuminate\Support\Facades\Log;
 use App\Notifications\ResetPasswordEmailQueued;
+use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements JWTSubject, MustVerifyEmail
 {
-    use HasFactory, Notifiable, SoftDeletes, HasUlids;
+    use HasFactory, Notifiable, SoftDeletes, HasUlids, HasRoles;
 
     /**
      * The data type of the auto-incrementing ID.
@@ -149,5 +150,10 @@ class User extends Authenticatable implements JWTSubject, MustVerifyEmail
     public function getJWTCustomClaims()
     {
         return [];
+    }
+
+    public function organizations()
+    {
+        return $this->belongsToMany(Organizations::class, 'organization_user', 'user_id', 'organization_id');
     }
 }
