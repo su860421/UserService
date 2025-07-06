@@ -1,5 +1,5 @@
 # 使用 PHP 8.4 基礎鏡像
-FROM php:8.4-cli
+FROM php:8.4-fpm
 
 # 安裝系統依賴和 PHP 擴展
 RUN apt-get update && apt-get install -y \
@@ -15,13 +15,6 @@ RUN apt-get update && apt-get install -y \
 
 # 安裝 PHP 擴展
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
-
-# 設置 PHP 內存限制和執行時間（使用多種方式確保設置生效）
-RUN echo "memory_limit = 2G" > /usr/local/etc/php/conf.d/memory-limit.ini \
-    && echo "memory_limit = 2G" >> /usr/local/etc/php/php.ini \
-    && echo "php_value[memory_limit] = 2G" >> /usr/local/etc/php-fpm.conf \
-    && echo "max_execution_time = 300" >> /usr/local/etc/php/conf.d/docker-php-timeout.ini \
-    && echo "max_execution_time = 300" >> /usr/local/etc/php/php.ini
 
 # 安裝 Redis 擴展
 RUN pecl install redis && docker-php-ext-enable redis
@@ -55,4 +48,4 @@ RUN npm install && npm run build
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
 # 設置啟動命令
-CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
+CMD ["php-fpm"]
