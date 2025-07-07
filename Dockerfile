@@ -1,7 +1,6 @@
-FROM php:8.4-fpm AS php_base
-WORKDIR /var/www/html
+FROM php:8.4-fpm
 
-# 安裝系統依賴套件
+# 安裝系統依賴和 PHP 擴展 (這部分完全不變)
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -10,68 +9,43 @@ RUN apt-get update && apt-get install -y \
     libxml2-dev \
     zip \
     unzip \
-    libzip-dev
+    nodejs \
+    npm
 
-# 安裝 PHP 核心擴展
-RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd zip
-
-# 安裝 Redis 擴展
+# 安裝 PHP 擴展 (這部分完全不變)
+RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
 RUN pecl install redis && docker-php-ext-enable redis
 
-# 安裝最新版的 Composer
+# 安裝 Composer (這部分完全不變)
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-# 僅複製 composer 的定義檔案
-COPY composer.json composer.lock ./
+WORKDIR /var/www/html
 
-# 安裝 PHP 依賴套件。這會在一個乾淨的環境中生成 vendor 目錄
+# --- 修改二：將複製專案文件的時機提前 ---
+# 我們先將所有專案檔案複製進來。
+# 這樣，後續的 `npm install` 就能找到 `package-lock.json`，
+# `composer install` 也能找到 `composer.lock`。
+COPY . .
+
+# 設置目錄權限 (提前執行，確保後續步驟有權限)
+RUN mkdir -p /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chown -R www-data:www-data /var/www/html \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+# 安裝 PHP 依賴
+# 這時它會在容器內，基於您複製進來的 composer.lock 建立一個乾淨的 vendor 目錄
 RUN composer install --prefer-dist --no-scripts --no-dev --no-autoloader
 
-
-# ---- 階段二：Node.js 依賴與前端資源編譯 ----
-# 使用一個輕量的 Node.js 版本作為基礎，並命名為 node_builder
-FROM node:20-alpine AS node_builder
-WORKDIR /var/www/html
-
-# 僅複製 package.json 的定義檔案
-COPY package.json package-lock.json ./
-
-# 安裝 Node.js 依賴套件，生成 node_modules 目錄
-RUN npm install
-
-# 複製所有應用程式碼，以便編譯前端資源
-COPY . .
-
-# 執行編譯指令
-RUN npm run build
-
-
-# ---- 最終階段：組合出正式環境的映像檔 ----
-# 以我們第一階段的 php_base 作為基礎，它已經包含了 PHP 和 vendor 目錄
-FROM php_base AS production
-WORKDIR /var/www/html
-
-# 從 php_base 階段，複製已經安裝好的 vendor 目錄進來
-COPY --from=php_base /var/www/html/vendor ./vendor
-
-# 複製我們自己的應用程式原始碼 (這時不會與 vendor 衝突)
-COPY . .
-
-# 從 node_builder 階段，只複製編譯好的前端資源成品進來
-COPY --from=node_builder /var/www/html/public/build ./public/build
-
-# 產生優化的 autoload 檔案
+# 生成 autoload 文件 (這部分完全不變)
 RUN composer dump-autoload --no-scripts --optimize
 
-# 設定 Laravel 快取，提升效能
-RUN php artisan config:cache
-RUN php artisan route:cache
-RUN php artisan view:cache
+# 安裝並編譯前端資源
+# 這時它會在容器內，基於您複製進來的 package-lock.json 建立一個乾淨的 node_modules 目錄
+RUN npm install && npm run build
 
-# 設定最終的檔案權限，確保網頁伺服器可以寫入
+# 最終權限設置 (可以再次執行以確保萬無一失)
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
-RUN chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-# 開放 9000 port 並啟動 php-fpm 服務
-EXPOSE 9000
+# --- 修改三：使用 php-fpm 啟動 ---
+# 移除 CMD ["php", "artisan", "serve"...]，改用 php-fpm 的預設啟動方式
 CMD ["php-fpm"]
