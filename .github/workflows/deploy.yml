@@ -48,7 +48,7 @@ jobs:
           IMAGE_TAG: ${{ github.sha }}
         run: |
           # 根據您的 Dockerfile 建置映像檔
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker build --no-cache --pull -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
           # 將建置好的映像檔推送到 ECR
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           # 將完整的映像檔 URI 設為輸出，供後續步驟使用
