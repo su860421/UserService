@@ -79,7 +79,7 @@ jobs:
             
             # 使用 docker-compose 拉取新版映像檔並重新啟動服務
             # --build 參數在這裡不是必須，但加上也無妨
-            docker-compose up -d
+            docker-compose up -d --force-recreate
 
             # (可選) 清理不再被使用的舊 Docker 映像檔，以節省伺服器空間
             docker image prune -af
