@@ -65,6 +65,9 @@ jobs:
             # 進入 EC2 上的部署目錄
             cd /home/ubuntu/user-service
 
+            # 讓 EC2 登入 ECR 的指令
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+
             # 將 CI/CD 流程中的變數寫入環境變數檔案
             # 這一行會建立 .env 檔案，裡面包含了最新映像檔的完整 URI，給 docker-compose.yml 使用
             echo "IMAGE_TAG=${{ steps.build-image.outputs.image_uri }}" > .env
