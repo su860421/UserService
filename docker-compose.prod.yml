@@ -96,6 +96,8 @@ services:
       # 使用生產環境專用的 nginx 配置
       - ./deployment/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
       - app_storage:/var/www/html/storage:ro
+    volumes_from:
+      - laravel-app  # 從 Laravel app 容器共享整個文件系統
     networks:
       - laravel
     depends_on:
