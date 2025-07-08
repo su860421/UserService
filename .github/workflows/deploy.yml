@@ -86,7 +86,8 @@ jobs:
             
             # 動態添加 Docker 映像資訊
             ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-            IMAGE_TAG=${{ steps.build-image.outputs.image_uri }}
+            ECR_REPOSITORY=${{ steps.config.outputs.ecr_repository }}
+            IMAGE_TAG=${{ github.sha }}
             EOF
             
             echo "📁 設置配置文件..."
