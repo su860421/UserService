@@ -10,7 +10,8 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     nodejs \
-    npm
+    npm \
+    netcat-openbsd 
 
 # 安裝 PHP 擴展 (這部分完全不變)
 RUN docker-php-ext-install pdo_mysql mbstring exif pcntl bcmath gd
