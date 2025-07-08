@@ -1,85 +1,139 @@
 # .github/workflows/deploy.yml
-
 name: Deploy Laravel to EC2
 
-# 觸發條件：當有程式碼 push 到 main 分支時
 on:
   push:
     branches:
       - master
 
-# 權限設定：允許 Actions 從 AWS 取得 OIDC Token
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  # 定義一個名為 deploy 的工作
   deploy:
-    # 使用最新的 Ubuntu 虛擬環境來執行此工作
     runs-on: ubuntu-latest
     steps:
-      # 步驟 1: 從 GitHub 下載您的程式碼到虛擬機中
-      - name: 1. Checkout Code
+      - name: 📥 Checkout Code
         uses: actions/checkout@v4
 
-      # 步驟 2: 設定 AWS 憑證
-      # 使用我們在 GitHub Secrets 中設定好的 IAM Role ARN，安全地取得臨時權限
-      - name: 2. Configure AWS Credentials
+      - name: 🔧 Parse Production Config
+        id: config
+        run: |
+          # 從 PRODUCTION_ENV 中提取配置
+          echo '${{ secrets.PRODUCTION_ENV }}' > /tmp/prod.env
+          
+          # 提取 EC2_HOST（用於後續步驟）
+          EC2_HOST=$(grep '^EC2_HOST=' /tmp/prod.env | cut -d'=' -f2)
+          echo "ec2_host=$EC2_HOST" >> $GITHUB_OUTPUT
+          
+          # 提取 ECR_REPOSITORY（用於構建）
+          ECR_REPOSITORY=$(grep '^ECR_REPOSITORY=' /tmp/prod.env | cut -d'=' -f2)
+          echo "ecr_repository=$ECR_REPOSITORY" >> $GITHUB_OUTPUT
+
+      - name: 🔐 Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME_ARN }}
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      # 步驟 3: 登入 Amazon ECR
-      # 使用上一步取得的臨時權限登入您的私有映像檔倉庫
-      - name: 3. Login to Amazon ECR
+      - name: 🐳 Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      # 步驟 4: 建置、標記並推送 Docker 映像檔到 ECR
-      - name: 4. Build, Tag, and Push Image to ECR
+      - name: 🏗️ Build, Tag, and Push Image to ECR
         id: build-image
         env:
-          # 從上一步的輸出和 secrets 讀取倉庫資訊
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-          # 使用 Git commit 的 SHA 碼作為映像檔標籤，保證唯一性
+          ECR_REPOSITORY: ${{ steps.config.outputs.ecr_repository }}
           IMAGE_TAG: ${{ github.sha }}
         run: |
-          # 根據您的 Dockerfile 建置映像檔
+          echo "🏗️ 構建 Docker 映像..."
           docker build --no-cache --pull -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-          # 將建置好的映像檔推送到 ECR
+          
+          echo "📤 推送映像到 ECR..."
           docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-          # 將完整的映像檔 URI 設為輸出，供後續步驟使用
+          
+          echo "✅ 映像推送完成"
           echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-      # 步驟 5: 透過 SSH 連線到 EC2 執行部署指令
-      - name: 5. Deploy to EC2
+      - name: 📂 Upload Production Config to EC2
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ steps.config.outputs.ec2_host }}
+          username: ubuntu
+          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
+          source: "docker-compose.prod.yml,deployment/nginx.prod.conf"
+          target: "/opt/app/"
+
+      - name: 🚀 Deploy to EC2
         uses: appleboy/ssh-action@master
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USERNAME }}
+          host: ${{ steps.config.outputs.ec2_host }}
+          username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
           script: |
-            # 進入 EC2 上的部署目錄
-            cd /home/ubuntu/user-service
-
-            # 讓 EC2 登入 ECR 的指令
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-
-            # 將 CI/CD 流程中的變數寫入環境變數檔案
-            # 這一行會建立 .env 檔案，裡面包含了最新映像檔的完整 URI，給 docker-compose.yml 使用
-            echo "IMAGE_TAG=${{ steps.build-image.outputs.image_uri }}" > .env
+            cd /opt/app
             
-            # 這一行會建立 laravel.env 檔案，裡面是您 Laravel 應用程式需要的所有環境變數
-            cat <<'EOF' > laravel.env
-            ${{ secrets.LARAVEL_ENV }}
+            echo "🔐 登入 ECR..."
+            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
+              docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
+            
+            echo "⚙️ 設置環境變數..."
+            # 直接使用完整的生產環境配置
+            cat > .env << 'EOF'
+            ${{ secrets.PRODUCTION_ENV }}
+            
+            # 動態添加 Docker 映像資訊
+            ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+            IMAGE_TAG=${{ steps.build-image.outputs.image_uri }}
             EOF
             
-            # 使用 docker-compose 拉取新版映像檔並重新啟動服務
-            # --build 參數在這裡不是必須，但加上也無妨
+            echo "📁 設置配置文件..."
+            # 使用生產環境的 nginx 配置
+            cp deployment/nginx.prod.conf nginx.conf
+            
+            # 使用生產環境的 docker-compose 配置
+            cp docker-compose.prod.yml docker-compose.yml
+            
+            echo "📥 拉取新映像..."
+            docker-compose pull
+            
+            echo "🔄 部署應用..."
             docker-compose up -d --force-recreate
-
-            # (可選) 清理不再被使用的舊 Docker 映像檔，以節省伺服器空間
-            docker image prune -af
+            
+            echo "⏳ 等待服務啟動..."
+            sleep 45
+            
+            echo "🏥 健康檢查..."
+            max_attempts=12
+            attempt=0
+            
+            while [ $attempt -lt $max_attempts ]; do
+              if curl -f http://localhost/health >/dev/null 2>&1; then
+                echo "✅ 應用健康檢查通過"
+                break
+              elif curl -f http://localhost >/dev/null 2>&1; then
+                echo "✅ 應用基本可用"
+                break
+              fi
+              
+              attempt=$((attempt + 1))
+              echo "⏳ 健康檢查嘗試 $attempt/$max_attempts..."
+              sleep 10
+            done
+            
+            if [ $attempt -eq $max_attempts ]; then
+              echo "❌ 健康檢查失敗，檢查服務狀態..."
+              docker-compose ps
+              docker-compose logs --tail=50 app
+              exit 1
+            fi
+            
+            echo "📊 最終服務狀態："
+            docker-compose ps
+            
+            echo "🧹 清理舊映像..."
+            docker image prune -af --filter "until=24h"
+            
+            echo "🎉 部署完成！"

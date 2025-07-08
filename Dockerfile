@@ -46,6 +46,17 @@ RUN npm install && npm run build
 # 最終權限設置 (可以再次執行以確保萬無一失)
 RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
 
-# --- 修改三：使用 php-fpm 啟動 ---
-# 移除 CMD ["php", "artisan", "serve"...]，改用 php-fpm 的預設啟動方式
-CMD ["php-fpm"]
+# ========== 新增：生產環境啟動腳本 ==========
+COPY deployment/docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# 新增：健康檢查腳本
+COPY deployment/health-check.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/health-check.sh
+
+# 健康檢查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD /usr/local/bin/health-check.sh
+
+# 使用自定義啟動腳本
+CMD ["/usr/local/bin/docker-entrypoint.sh"]
