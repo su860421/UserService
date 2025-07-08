@@ -1,4 +1,4 @@
-# docker-compose.prod.yml - 純生產環境配置
+# docker-compose.prod.yml - 修復版本
 services:
   # Laravel 應用服務
   app:
@@ -34,9 +34,9 @@ services:
       - LOG_CHANNEL=stack
       - LOG_LEVEL=error
     
-    # 生產環境：只掛載必要的持久化目錄
     volumes:
-      - app_storage:/var/www/html/storage
+      - laravel_app:/var/www/html          # 重要：整個應用
+      - app_storage:/var/www/html/storage  # storage 目錄
     networks:
       - laravel
     depends_on:
@@ -76,6 +76,7 @@ services:
     
     command: php artisan horizon
     volumes:
+      - laravel_app:/var/www/html          # 重要：整個應用
       - app_storage:/var/www/html/storage
     networks:
       - laravel
@@ -90,14 +91,12 @@ services:
     container_name: laravel-nginx
     restart: unless-stopped
     ports:
-      - "80:80"      # 生產環境使用標準端口
-      - "443:443"    # 為未來 HTTPS 準備
+      - "80:80"
+      - "443:443"
     volumes:
-      # 使用生產環境專用的 nginx 配置
       - ./deployment/nginx.prod.conf:/etc/nginx/conf.d/default.conf:ro
+      - laravel_app:/var/www/html:ro       # 重要：整個應用（只讀）
       - app_storage:/var/www/html/storage:ro
-    volumes_from:
-      - laravel-app  # 從 Laravel app 容器共享整個文件系統
     networks:
       - laravel
     depends_on:
@@ -155,6 +154,7 @@ networks:
     driver: bridge
 
 volumes:
+  laravel_app:    # 重要：新增這個 volume
   app_storage:
   mysql_data:
   redis_data:
