@@ -63,7 +63,7 @@ jobs:
           host: ${{ steps.config.outputs.ec2_host }}
           username: ubuntu
           key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml,deployment/nginx.prod.conf"
+          source: "docker-compose.prod.yml,deployment/nginx.prod.conf,deployment/docker-entrypoint.sh"
           target: "/opt/app/"
 
       - name: 🚀 Deploy to EC2
@@ -80,15 +80,15 @@ jobs:
               docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
             
             echo "⚙️ 設置環境變數..."
-            # 直接使用完整的生產環境配置
-            cat > .env << 'EOF'
-            ${{ secrets.PRODUCTION_ENV }}
+            # 🔥 修复：先创建基础.env文件
+            echo '${{ secrets.PRODUCTION_ENV }}' > .env
             
-            # 動態添加 Docker 映像資訊
-            ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
-            ECR_REPOSITORY=${{ steps.config.outputs.ecr_repository }}
-            IMAGE_TAG=${{ github.sha }}
-            EOF
+            # 🔥 修复：确保文件以换行符结尾，然后添加Docker变量
+            echo "" >> .env
+            echo "# Docker 映像資訊" >> .env
+            echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> .env
+            echo "ECR_REPOSITORY=${{ steps.config.outputs.ecr_repository }}" >> .env
+            echo "IMAGE_TAG=${{ github.sha }}" >> .env
             
             echo "📁 設置配置文件..."
             # 使用生產環境的 nginx 配置
@@ -97,6 +97,9 @@ jobs:
             # 使用生產環境的 docker-compose 配置
             cp docker-compose.prod.yml docker-compose.yml
             
+            echo "🛑 停止現有服務..."
+            docker-compose down --volumes --remove-orphans || true
+            
             echo "📥 拉取新映像..."
             docker-compose pull
             
@@ -104,7 +107,17 @@ jobs:
             docker-compose up -d --force-recreate
             
             echo "⏳ 等待服務啟動..."
-            sleep 45
+            sleep 60
+            
+            echo "🧹 清除 Laravel 缓存..."
+            docker exec laravel-app php artisan config:clear 2>/dev/null || true
+            docker exec laravel-app php artisan cache:clear 2>/dev/null || true
+            docker exec laravel-app php artisan route:clear 2>/dev/null || true
+            docker exec laravel-app php artisan view:clear 2>/dev/null || true
+            
+            echo "🔍 檢查環境變數加載狀況..."
+            echo "容器內的關鍵環境變數："
+            docker exec laravel-app env | grep -E "(APP_|DB_|REDIS_|AUTH_|JWT_|CACHE_|SESSION_|QUEUE_)" | sort || true
             
             echo "🏥 健康檢查..."
             max_attempts=12
@@ -113,6 +126,9 @@ jobs:
             while [ $attempt -lt $max_attempts ]; do
               if curl -f http://localhost/health >/dev/null 2>&1; then
                 echo "✅ 應用健康檢查通過"
+                break
+              elif curl -f http://localhost/api/v1/health-check >/dev/null 2>&1; then
+                echo "✅ API 健康檢查通過"
                 break
               elif curl -f http://localhost >/dev/null 2>&1; then
                 echo "✅ 應用基本可用"
@@ -126,8 +142,18 @@ jobs:
             
             if [ $attempt -eq $max_attempts ]; then
               echo "❌ 健康檢查失敗，檢查服務狀態..."
+              echo "=== Docker Compose 狀態 ==="
               docker-compose ps
+              echo "=== App 容器日誌 ==="
               docker-compose logs --tail=50 app
+              echo "=== Redis 容器日誌 ==="
+              docker-compose logs --tail=20 redis
+              echo "=== MySQL 容器日誌 ==="
+              docker-compose logs --tail=20 db
+              echo "=== 檢查 .env 文件 ==="
+              ls -la .env
+              echo "=== .env 文件內容（前20行）==="
+              head -20 .env
               exit 1
             fi
             

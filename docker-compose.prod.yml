@@ -1,19 +1,21 @@
-# docker-compose.prod.yml - 修复版本
+# docker-compose.prod.yml - 修复.env加载问题
 services:
   # Laravel 应用服务
   app:
     image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
     container_name: laravel-app
     restart: unless-stopped
-    # 🔥 关键修改：使用 env_file 读取 .env 文件
+    # 🔥 使用 env_file 读取 .env 文件
     env_file:
       - .env
     environment:
+      # 只保留Docker容器间通信必需的变量
       - CONTAINER_ROLE=app
       - DB_HOST=db
       - REDIS_HOST=redis
-      - DB_PORT=3306
-      - REDIS_PORT=6379
+    # 移除这些变量，让.env文件处理
+    # - DB_PORT=3306
+    # - REDIS_PORT=6379
     volumes:
       - laravel_app:/var/www/html
       - app_storage:/var/www/html/storage
@@ -34,16 +36,14 @@ services:
     image: ${ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}
     container_name: laravel-horizon
     restart: unless-stopped
-    # 🔥 关键修改：使用 env_file 读取 .env 文件
+    # 🔥 使用 env_file 读取 .env 文件
     env_file:
       - .env
     environment:
+      # 只保留Docker容器间通信必需的变量
       - CONTAINER_ROLE=horizon
       - DB_HOST=db
       - REDIS_HOST=redis
-      - DB_PORT=3306
-      - REDIS_PORT=6379
-      - QUEUE_CONNECTION=redis
     command: php artisan horizon
     volumes:
       - laravel_app:/var/www/html
@@ -82,10 +82,11 @@ services:
     image: mysql:8.0
     container_name: laravel-db
     restart: unless-stopped
-    # 🔥 关键修改：使用 env_file 读取 .env 文件
+    # 🔥 使用 env_file 读取 .env 文件
     env_file:
       - .env
     environment:
+      # 使用变量替换，这些变量会从.env文件读取
       - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
       - MYSQL_DATABASE=${DB_DATABASE}
       - MYSQL_USER=${DB_USERNAME}
@@ -111,10 +112,11 @@ services:
     image: redis:alpine
     container_name: laravel-redis
     restart: unless-stopped
-    # 🔥 关键修改：使用 env_file 读取 .env 文件
+    # 🔥 使用 env_file 读取 .env 文件
     env_file:
       - .env
     environment:
+      # 使用变量替换，这个变量会从.env文件读取
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
     volumes:
