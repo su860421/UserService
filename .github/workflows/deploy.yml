@@ -4,7 +4,7 @@ name: Deploy Laravel to EC2
 on:
   push:
     branches:
-      - master
+      - develop
 
 permissions:
   id-token: write
@@ -22,10 +22,6 @@ jobs:
         run: |
           # 從 PRODUCTION_ENV 中提取配置
           echo '${{ secrets.PRODUCTION_ENV }}' > /tmp/prod.env
-          
-          # 提取 EC2_HOST（用於後續步驟）
-          EC2_HOST=$(grep '^EC2_HOST=' /tmp/prod.env | cut -d'=' -f2)
-          echo "ec2_host=$EC2_HOST" >> $GITHUB_OUTPUT
           
           # 提取 ECR_REPOSITORY（用於構建）
           ECR_REPOSITORY=$(grep '^ECR_REPOSITORY=' /tmp/prod.env | cut -d'=' -f2)
@@ -58,109 +54,122 @@ jobs:
           echo "image_uri=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
       - name: 📂 Upload Production Config to EC2
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ steps.config.outputs.ec2_host }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          source: "docker-compose.prod.yml,deployment/nginx.prod.conf,deployment/docker-entrypoint.sh"
-          target: "/opt/app/"
+        run: |
+          # 透過 SSM 上傳配置文件（取代 SCP）
+          echo "📂 上傳配置文件到 EC2..."
+          
+          # 將檔案內容 base64 編碼
+          DOCKER_COMPOSE_CONTENT=$(base64 -w 0 docker-compose.prod.yml)
+          NGINX_CONF_CONTENT=$(base64 -w 0 deployment/nginx.prod.conf)
+          ENTRYPOINT_CONTENT=$(base64 -w 0 deployment/docker-entrypoint.sh)
+          
+          # 透過 SSM 重建文件
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=[
+              'cd /opt/app',
+              'mkdir -p deployment',
+              'echo \"$DOCKER_COMPOSE_CONTENT\" | base64 -d > docker-compose.prod.yml',
+              'echo \"$NGINX_CONF_CONTENT\" | base64 -d > deployment/nginx.prod.conf', 
+              'echo \"$ENTRYPOINT_CONTENT\" | base64 -d > deployment/docker-entrypoint.sh',
+              'chmod +x deployment/docker-entrypoint.sh'
+            ]" \
+            --region ${{ secrets.AWS_REGION }} > /dev/null
 
       - name: 🚀 Deploy to EC2
-        uses: appleboy/ssh-action@master
-        with:
-          host: ${{ steps.config.outputs.ec2_host }}
-          username: ubuntu
-          key: ${{ secrets.EC2_SSH_PRIVATE_KEY }}
-          script: |
-            cd /opt/app
-            
-            echo "🔐 登入 ECR..."
-            aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | \
-              docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}
-            
-            echo "⚙️ 設置環境變數..."
-            # 🔥 修复：先创建基础.env文件
-            echo '${{ secrets.PRODUCTION_ENV }}' > .env
-            
-            # 🔥 修复：确保文件以换行符结尾，然后添加Docker变量
-            echo "" >> .env
-            echo "# Docker 映像資訊" >> .env
-            echo "ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}" >> .env
-            echo "ECR_REPOSITORY=${{ steps.config.outputs.ecr_repository }}" >> .env
-            echo "IMAGE_TAG=${{ github.sha }}" >> .env
-            
-            echo "📁 設置配置文件..."
-            # 使用生產環境的 nginx 配置
-            cp deployment/nginx.prod.conf nginx.conf
-            
-            # 使用生產環境的 docker-compose 配置
-            cp docker-compose.prod.yml docker-compose.yml
-            
-            echo "🛑 停止現有服務..."
-            docker-compose down --volumes --remove-orphans || true
-            
-            echo "📥 拉取新映像..."
-            docker-compose pull
-            
-            echo "🔄 部署應用..."
-            docker-compose up -d --force-recreate
-            
-            echo "⏳ 等待服務啟動..."
-            sleep 60
-            
-            echo "🧹 清除 Laravel 缓存..."
-            docker exec laravel-app php artisan config:clear 2>/dev/null || true
-            docker exec laravel-app php artisan cache:clear 2>/dev/null || true
-            docker exec laravel-app php artisan route:clear 2>/dev/null || true
-            docker exec laravel-app php artisan view:clear 2>/dev/null || true
-            
-            echo "🔍 檢查環境變數加載狀況..."
-            echo "容器內的關鍵環境變數："
-            docker exec laravel-app env | grep -E "(APP_|DB_|REDIS_|AUTH_|JWT_|CACHE_|SESSION_|QUEUE_)" | sort || true
-            
-            echo "🏥 健康檢查..."
-            max_attempts=12
-            attempt=0
-            
-            while [ $attempt -lt $max_attempts ]; do
-              if curl -f http://localhost/health >/dev/null 2>&1; then
-                echo "✅ 應用健康檢查通過"
-                break
-              elif curl -f http://localhost/api/v1/health-check >/dev/null 2>&1; then
-                echo "✅ API 健康檢查通過"
-                break
-              elif curl -f http://localhost >/dev/null 2>&1; then
-                echo "✅ 應用基本可用"
-                break
-              fi
-              
-              attempt=$((attempt + 1))
-              echo "⏳ 健康檢查嘗試 $attempt/$max_attempts..."
-              sleep 10
-            done
-            
-            if [ $attempt -eq $max_attempts ]; then
-              echo "❌ 健康檢查失敗，檢查服務狀態..."
-              echo "=== Docker Compose 狀態 ==="
-              docker-compose ps
-              echo "=== App 容器日誌 ==="
-              docker-compose logs --tail=50 app
-              echo "=== Redis 容器日誌 ==="
-              docker-compose logs --tail=20 redis
-              echo "=== MySQL 容器日誌 ==="
-              docker-compose logs --tail=20 db
-              echo "=== 檢查 .env 文件 ==="
-              ls -la .env
-              echo "=== .env 文件內容（前20行）==="
-              head -20 .env
-              exit 1
-            fi
-            
-            echo "📊 最終服務狀態："
-            docker-compose ps
-            
-            echo "🧹 清理舊映像..."
-            docker image prune -af --filter "until=24h"
-            
-            echo "🎉 部署完成！"
+        run: |
+          # 透過 SSM 執行部署（取代 SSH）
+          echo "🚀 開始部署..."
+          
+          aws ssm send-command \
+            --instance-ids "${{ secrets.EC2_INSTANCE_ID }}" \
+            --document-name "AWS-RunShellScript" \
+            --parameters "commands=[
+              'cd /opt/app',
+              '',
+              'echo \"🔐 登入 ECR...\"',
+              'aws ecr get-login-password --region ${{ secrets.AWS_REGION }} | docker login --username AWS --password-stdin ${{ steps.login-ecr.outputs.registry }}',
+              '',
+              'echo \"⚙️ 設置環境變數...\"',
+              'echo '\''${{ secrets.PRODUCTION_ENV }}'\'' > .env',
+              '',
+              'echo \"\" >> .env',
+              'echo \"# Docker 映像資訊\" >> .env',
+              'echo \"ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}\" >> .env',
+              'echo \"ECR_REPOSITORY=${{ steps.config.outputs.ecr_repository }}\" >> .env',
+              'echo \"IMAGE_TAG=${{ github.sha }}\" >> .env',
+              '',
+              'echo \"📁 設置配置文件...\"',
+              'cp deployment/nginx.prod.conf nginx.conf',
+              'cp docker-compose.prod.yml docker-compose.yml',
+              '',
+              'echo \"🛑 停止現有服務...\"',
+              'docker-compose down --volumes --remove-orphans || true',
+              '',
+              'echo \"📥 拉取新映像...\"',
+              'docker-compose pull',
+              '',
+              'echo \"🔄 部署應用...\"',
+              'docker-compose up -d --force-recreate',
+              '',
+              'echo \"⏳ 等待服務啟動...\"',
+              'sleep 60',
+              '',
+              'echo \"🧹 清除 Laravel 缓存...\"',
+              'docker exec laravel-app php artisan config:clear 2>/dev/null || true',
+              'docker exec laravel-app php artisan cache:clear 2>/dev/null || true',
+              'docker exec laravel-app php artisan route:clear 2>/dev/null || true',
+              'docker exec laravel-app php artisan view:clear 2>/dev/null || true',
+              '',
+              'echo \"🔍 檢查環境變數加載狀況...\"',
+              'echo \"容器內的關鍵環境變數：\"',
+              'docker exec laravel-app env | grep -E \"(APP_|DB_|REDIS_|AUTH_|JWT_|CACHE_|SESSION_|QUEUE_)\" | sort || true',
+              '',
+              'echo \"🏥 健康檢查...\"',
+              'max_attempts=12',
+              'attempt=0',
+              '',
+              'while [ \$attempt -lt \$max_attempts ]; do',
+              '  if curl -f http://localhost/health >/dev/null 2>&1; then',
+              '    echo \"✅ 應用健康檢查通過\"',
+              '    break',
+              '  elif curl -f http://localhost/api/v1/health-check >/dev/null 2>&1; then',
+              '    echo \"✅ API 健康檢查通過\"',
+              '    break',
+              '  elif curl -f http://localhost >/dev/null 2>&1; then',
+              '    echo \"✅ 應用基本可用\"',
+              '    break',
+              '  fi',
+              '  ',
+              '  attempt=\$((attempt + 1))',
+              '  echo \"⏳ 健康檢查嘗試 \$attempt/\$max_attempts...\"',
+              '  sleep 10',
+              'done',
+              '',
+              'if [ \$attempt -eq \$max_attempts ]; then',
+              '  echo \"❌ 健康檢查失敗，檢查服務狀態...\"',
+              '  echo \"=== Docker Compose 狀態 ===\"',
+              '  docker-compose ps',
+              '  echo \"=== App 容器日誌 ===\"',
+              '  docker-compose logs --tail=50 app',
+              '  echo \"=== Redis 容器日誌 ===\"',
+              '  docker-compose logs --tail=20 redis',
+              '  echo \"=== MySQL 容器日誌 ===\"',
+              '  docker-compose logs --tail=20 db',
+              '  echo \"=== 檢查 .env 文件 ===\"',
+              '  ls -la .env',
+              '  echo \"=== .env 文件內容（前20行）===\"',
+              '  head -20 .env',
+              '  exit 1',
+              'fi',
+              '',
+              'echo \"📊 最終服務狀態：\"',
+              'docker-compose ps',
+              '',
+              'echo \"🧹 清理舊映像...\"',
+              'docker image prune -af --filter \"until=24h\"',
+              '',
+              'echo \"🎉 部署完成！\"'
+            ]" \
+            --region ${{ secrets.AWS_REGION }} > /dev/null
